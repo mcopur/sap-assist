@@ -4,14 +4,27 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/mcopur/sap-assist/internal/config"
+	"github.com/mcopur/sap-assist/internal/database"
 )
 
 func main() {
+	cfg := config.Load()
+
+	// Initialize database connection
+	db, err := database.Init()
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer db.Close()
+
 	http.HandleFunc("/", handleRoot)
 	http.HandleFunc("/health", handleHealth)
 
-	log.Println("Starting server on :8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	addr := fmt.Sprintf(":%d", cfg.ServerPort)
+	log.Printf("Starting server on %s", addr)
+	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
 }
