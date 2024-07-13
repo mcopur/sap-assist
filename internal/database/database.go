@@ -1,30 +1,43 @@
 package database
 
 import (
-	"database/sql"
-	"fmt"
+    "context"
+    "fmt"
+    "log"
 
-	_ "github.com/lib/pq"
-	"github.com/mcopur/sap-assist/internal/config"
-	"github.com/mcopur/sap-assist/internal/repository"
+    "github.com/jackc/pgx/v4/pgxpool"
+    "github.com/mcopur/sap-assist/internal/config"
+    "github.com/mcopur/sap-assist/internal/repository"
 )
 
-func InitDB(cfg *config.Config) (*sql.DB, error) {
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName)
+var db *pgxpool.Pool
 
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %w", err)
-	}
+func InitDB(cfg *config.Config) (*pgxpool.Pool, error) {
+    connectionString := fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
+        cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName)
 
-	if err = db.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", err)
-	}
+    poolConfig, err := pgxpool.ParseConfig(connectionString)
+    if err != nil {
+        return nil, fmt.Errorf("unable to parse connection string: %v", err)
+    }
 
-	return db, nil
+    // Bağlantı havuzu ayarları
+    poolConfig.MaxConns = 10
+    poolConfig.MinConns = 2
+
+    db, err = pgxpool.ConnectConfig(context.Background(), poolConfig)
+    if err != nil {
+        return nil, fmt.Errorf("unable to connect to database: %v", err)
+    }
+
+    log.Println("Successfully connected to the database")
+    return db, nil
 }
 
-func NewRepository(db *sql.DB) *repository.PostgresRepository {
-	return repository.NewPostgresRepository(db)
+func GetDB() *pgxpool.Pool {
+    return db
+}
+
+func NewRepository(db *pgxpool.Pool) *repository.PostgresRepository {
+    return repository.NewPostgresRepository(db)
 }
