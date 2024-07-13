@@ -1,4 +1,4 @@
-CREATE TABLE  IF NOT EXISTS users (
+CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE  IF NOT EXISTS users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE  IF NOT EXISTS leave_requests (
+CREATE TABLE leave_requests (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
     start_date DATE NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE  IF NOT EXISTS leave_requests (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE  IF NOT EXISTS purchase_requests (
+CREATE TABLE purchase_requests (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
     item_name VARCHAR(100) NOT NULL,

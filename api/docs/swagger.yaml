@@ -1,0 +1,106 @@
+basePath: /
+definitions:
+  models.LeaveRequest:
+    properties:
+      created_at:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: integer
+      leave_type:
+        type: string
+      reason:
+        type: string
+      start_date:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.PurchaseRequest:
+    properties:
+      created_at:
+        type: string
+      estimated_cost:
+        type: number
+      id:
+        type: integer
+      item_name:
+        type: string
+      quantity:
+        type: integer
+      reason:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is the API for SAP Assist application
+  title: SAP Assist API
+  version: "1.0"
+paths:
+  /users/{user_id}/leave-requests:
+    get:
+      description: Get all leave requests for a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.LeaveRequest'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get leave requests for a user
+  /users/{user_id}/purchase-requests:
+    get:
+      description: Get all purchase requests for a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.PurchaseRequest'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get purchase requests for a user
+swagger: "2.0"

@@ -236,3 +236,71 @@ func (r *PostgresRepository) DeletePurchaseRequest(id int) error {
     }
     return nil
 }
+
+func (r *PostgresRepository) GetLeaveRequestsByUserIDWithPagination(userID, offset, limit int) ([]*models.LeaveRequest, error) {
+    query := `SELECT id, user_id, start_date, end_date, leave_type, status, reason, created_at, updated_at 
+              FROM leave_requests 
+              WHERE user_id = $1 
+              ORDER BY created_at DESC 
+              LIMIT $2 OFFSET $3`
+    
+    rows, err := r.db.Query(query, userID, limit, offset)
+    if err != nil {
+        return nil, fmt.Errorf("error getting leave requests: %w", err)
+    }
+    defer rows.Close()
+
+    var requests []*models.LeaveRequest
+    for rows.Next() {
+        request := &models.LeaveRequest{}
+        err := rows.Scan(
+            &request.ID, &request.UserID, &request.StartDate, &request.EndDate, 
+            &request.LeaveType, &request.Status, &request.Reason, 
+            &request.CreatedAt, &request.UpdatedAt,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning leave request: %w", err)
+        }
+        requests = append(requests, request)
+    }
+
+    if err = rows.Err(); err != nil {
+        return nil, fmt.Errorf("error iterating leave requests: %w", err)
+    }
+
+    return requests, nil
+}
+
+func (r *PostgresRepository) GetPurchaseRequestsByUserIDWithPagination(userID, offset, limit int) ([]*models.PurchaseRequest, error) {
+    query := `SELECT id, user_id, item_name, quantity, estimated_cost, status, reason, created_at, updated_at 
+              FROM purchase_requests 
+              WHERE user_id = $1 
+              ORDER BY created_at DESC 
+              LIMIT $2 OFFSET $3`
+    
+    rows, err := r.db.Query(query, userID, limit, offset)
+    if err != nil {
+        return nil, fmt.Errorf("error getting purchase requests: %w", err)
+    }
+    defer rows.Close()
+
+    var requests []*models.PurchaseRequest
+    for rows.Next() {
+        request := &models.PurchaseRequest{}
+        err := rows.Scan(
+            &request.ID, &request.UserID, &request.ItemName, &request.Quantity, 
+            &request.EstimatedCost, &request.Status, &request.Reason, 
+            &request.CreatedAt, &request.UpdatedAt,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning purchase request: %w", err)
+        }
+        requests = append(requests, request)
+    }
+
+    if err = rows.Err(); err != nil {
+        return nil, fmt.Errorf("error iterating purchase requests: %w", err)
+    }
+
+    return requests, nil
+}

@@ -76,9 +76,9 @@ func (s *Service) GetLeaveRequestByID(id int) (*models.LeaveRequest, error) {
 	return request, nil
 }
 
-func (s *Service) GetLeaveRequestsByUserID(userID int) ([]*models.LeaveRequest, error) {
+func (s *Service) GetLeaveRequestsByUserID(userID int, pagination *models.PaginationQuery) ([]*models.LeaveRequest, error) {
 	utils.InfoLogger.Printf("Getting leave requests for user: %d", userID)
-	requests, err := s.repo.GetLeaveRequestsByUserID(userID)
+	requests, err := s.repo.GetLeaveRequestsByUserIDWithPagination(userID, pagination.GetOffset(), pagination.GetLimit())
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to get leave requests for user: %v", err)
 		return nil, utils.NewAppError(500, "Failed to get leave requests", err)
@@ -127,9 +127,9 @@ func (s *Service) GetPurchaseRequestByID(id int) (*models.PurchaseRequest, error
 	return request, nil
 }
 
-func (s *Service) GetPurchaseRequestsByUserID(userID int) ([]*models.PurchaseRequest, error) {
+func (s *Service) GetPurchaseRequestsByUserID(userID int, pagination *models.PaginationQuery) ([]*models.PurchaseRequest, error) {
 	utils.InfoLogger.Printf("Getting purchase requests for user: %d", userID)
-	requests, err := s.repo.GetPurchaseRequestsByUserID(userID)
+	requests, err := s.repo.GetPurchaseRequestsByUserIDWithPagination(userID, pagination.GetOffset(), pagination.GetLimit())
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to get purchase requests for user: %v", err)
 		return nil, utils.NewAppError(500, "Failed to get purchase requests", err)
