@@ -8,6 +8,9 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/golang-migrate/migrate/v4"
+    "github.com/golang-migrate/migrate/v4/database/postgres"
+    _ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 var db *sql.DB
@@ -38,7 +41,25 @@ func Init() (*sql.DB, error) {
 	}
 
 	log.Println("Successfully connected to the database")
-	return db, nil
+	// Apply migrations
+    driver, err := postgres.WithInstance(db, &postgres.Config{})
+    if err != nil {
+        return nil, fmt.Errorf("failed to create database driver: %v", err)
+    }
+
+    m, err := migrate.NewWithDatabaseInstance(
+        "file://migrations",
+        "postgres", driver)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create migrate instance: %v", err)
+    }
+
+    if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+        return nil, fmt.Errorf("failed to apply migrations: %v", err)
+    }
+
+    log.Println("Migrations applied successfully")
+    return db, nil
 }
 
 func GetDB() *sql.DB {
