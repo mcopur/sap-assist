@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
+	"github.com/mcopur/sap-assist/internal/config"
 	"github.com/mcopur/sap-assist/internal/database"
 	"github.com/mcopur/sap-assist/internal/models"
 	"github.com/mcopur/sap-assist/internal/service"
@@ -11,11 +13,18 @@ import (
 )
 
 func main() {
-	repo, err := database.NewRepository()
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		utils.ErrorLogger.Fatalf("Failed to create repository: %v", err)
+		utils.ErrorLogger.Fatalf("Failed to load config: %v", err)
 	}
 
+	db, err := database.InitDB(cfg)
+	if err != nil {
+		utils.ErrorLogger.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer db.Close()
+
+	repo := database.NewRepository(db)
 	svc := service.NewService(repo)
 
 	// Health check endpoint
@@ -51,8 +60,8 @@ func main() {
 
 	// TODO: Add more endpoints here for other operations
 
-	utils.InfoLogger.Println("Starting server on :8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	utils.InfoLogger.Printf("Starting server on :%d", cfg.ServerPort)
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.ServerPort), nil); err != nil {
 		utils.ErrorLogger.Fatalf("Error starting server: %v", err)
 	}
 }

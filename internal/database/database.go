@@ -1,59 +1,30 @@
 package database
 
 import (
-    "database/sql"
-    "fmt"
-    "log"
-    "os"
+	"database/sql"
+	"fmt"
 
-    "github.com/joho/godotenv"
-    _ "github.com/lib/pq"
-    "github.com/mcopur/sap-assist/internal/repository"
+	_ "github.com/lib/pq"
+	"github.com/mcopur/sap-assist/internal/config"
+	"github.com/mcopur/sap-assist/internal/repository"
 )
 
-var db *sql.DB
+func InitDB(cfg *config.Config) (*sql.DB, error) {
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName)
 
-func Init() (*sql.DB, error) {
-    err := godotenv.Load()
-    if err != nil {
-        log.Fatal("Error loading .env file")
-    }
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
 
-    dbHost := os.Getenv("DB_HOST")
-    dbPort := os.Getenv("DB_PORT")
-    dbUser := os.Getenv("DB_USER")
-    dbPassword := os.Getenv("DB_PASSWORD")
-    dbName := os.Getenv("DB_NAME")
+	if err = db.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
 
-    connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-        dbHost, dbPort, dbUser, dbPassword, dbName)
-
-    db, err = sql.Open("postgres", connStr)
-    if err != nil {
-        return nil, fmt.Errorf("failed to open database: %v", err)
-    }
-
-    err = db.Ping()
-    if err != nil {
-        return nil, fmt.Errorf("failed to ping database: %v", err)
-    }
-
-    log.Println("Successfully connected to the database")
-    return db, nil
+	return db, nil
 }
 
-func GetDB() *sql.DB {
-    return db
-}
-
-func NewRepository() (*repository.PostgresRepository, error) {
-    if db == nil {
-        var err error
-        db, err = Init()
-        if err != nil {
-            return nil, fmt.Errorf("failed to initialize database: %v", err)
-        }
-    }
-
-    return repository.NewPostgresRepository(db), nil
+func NewRepository(db *sql.DB) *repository.PostgresRepository {
+	return repository.NewPostgresRepository(db)
 }
