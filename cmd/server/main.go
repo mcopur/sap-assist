@@ -7,6 +7,7 @@ import (
 
 	"github.com/mcopur/sap-assist/internal/config"
 	"github.com/mcopur/sap-assist/internal/database"
+	"github.com/mcopur/sap-assist/internal/middleware"
 	"github.com/mcopur/sap-assist/internal/models"
 	"github.com/mcopur/sap-assist/internal/service"
 	"github.com/mcopur/sap-assist/internal/utils"
@@ -28,14 +29,14 @@ func main() {
 	svc := service.NewService(repo)
 
 	// Health check endpoint
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/health", middleware.Logging(middleware.CORS(func(w http.ResponseWriter, r *http.Request) {
 		utils.InfoLogger.Println("Health check requested")
 		response := map[string]string{"status": "OK"}
 		json.NewEncoder(w).Encode(response)
-	})
+	})))
 
 	// User creation endpoint
-	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/users", middleware.Logging(middleware.CORS(middleware.BasicAuth(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -56,7 +57,7 @@ func main() {
 
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(user)
-	})
+	}))))
 
 	// TODO: Add more endpoints here for other operations
 
