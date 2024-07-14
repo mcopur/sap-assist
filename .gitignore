@@ -116,3 +116,93 @@ NOTES.md
 .terraform/
 *.tfstate
 *.tfstate.*
+
+# Python specific
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+ENV/
+venv.bak/
+*.egg
+*.egg-info/
+.eggs
+dist/
+build/
+pip-log.txt
+pip-delete-this-directory.txt
+Pipfile.lock
+poetry.lock
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytype/
+.mypy_cache/
+.pyre/
+
+# React Native specific
+# React Native Packager
+.expo/
+.expo-shared/
+*.expo
+# Metro bundler
+.expo/
+node_modules/
+npm-debug.log
+yarn-error.log
+/ios/Pods/
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+/ios/Podfile.lock
+/android/.gradle/
+/android/app/build/
+/android/app/release/
+/android/app/debug/
+/android/local.properties
+/android/gradle.properties
+/android/build/
+/android/captures/
+/android/app/*.iml
+/android/*.iml
+/android/build.gradle
+/android/gradle/
+/android/app/google-services.json
+/android/key.properties
+
+# React.js specific
+/build/
+node_modules/
+npm-debug.log
+yarn-error.log
+.yarn-integrity
+.next/
+out/
+.DS_Store
+*.log
+
+# Parcel-bundler cache (if used)
+.cache/
+
+# Svelte.js specific
+/node_modules/
+/public/build/
+
+# Storybook
+.storybook/
+.storybook-static/
+.DS_Store
+
+# Miscellaneous
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+/.pnp
+.pnp.js

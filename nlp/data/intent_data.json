@@ -1,0 +1,56 @@
+{
+    "intents": [
+        {
+            "tag": "greeting",
+            "patterns": ["Merhaba", "Selam", "Nasılsın", "İyi günler", "Günaydın", "İyi akşamlar"],
+            "responses": ["Merhaba! Size nasıl yardımcı olabilirim?", "Selam! Nasıl yardımcı olabilirim?"]
+        },
+        {
+            "tag": "leave_request_annual",
+            "patterns": [
+                "Yıllık izin almak istiyorum",
+                "Tatil için yıllık izin",
+                "Yıllık izin talep etmek istiyorum",
+                "Ne zaman yıllık izne çıkabilirim",
+                "Belirli tarihler için yıllık izin istiyorum"
+            ],
+            "responses": ["Yıllık izin talebiniz için tarihleri alabilir miyim? Örneğin: 01.08.2024 ve 05.08.2024 arası"]
+        },
+        {
+            "tag": "leave_request_excuse",
+            "patterns": [
+                "Mazeret izni almak istiyorum",
+                "Kısa süreli izin lazım",
+                "Birkaç saatlik izin alabilir miyim",
+                "Mazeret izni talep etmek istiyorum"
+            ],
+            "responses": ["Mazeret izni talebiniz için tarih ve saatleri alabilir miyim? Örneğin: 05.08.2024 tarihi 09:30-11:30 arası"]
+        },
+        {
+            "tag": "purchase_request",
+            "patterns": [
+                "Satın alma talebi oluşturmak istiyorum",
+                "Yeni ekipman siparişi",
+                "Malzeme siparişi nasıl verebilirim",
+                "Ürün satın almak istiyorum"
+            ],
+            "responses": ["Satın alma talebiniz için hangi ürünü veya hizmeti talep etmek istiyorsunuz?"]
+        },
+        {
+            "tag": "confirm_annual_leave",
+            "patterns": [
+                "01.08.2024 ve 05.08.2024 tarihleri için yıllık izin talebi oluşturabilir misin",
+                "1 Ağustos'tan 5 Ağustos'a kadar yıllık izin istiyorum"
+            ],
+            "responses": ["Yıllık izin talebinizi aldım. İzin türü: Yıllık İzin, Başlangıç: 01.08.2024, Bitiş: 05.08.2024. Onay için yöneticinize ileteceğim. Başka bir isteğiniz var mı?"]
+        },
+        {
+            "tag": "confirm_excuse_leave",
+            "patterns": [
+                "05.08.2024 tarihi 09:30-11:30 için mazeret izin talebi oluşturabilir misin",
+                "5 Ağustos sabahı 2 saatlik mazeret izni istiyorum"
+            ],
+            "responses": ["Mazeret izni talebinizi aldım. İzin türü: Mazeret İzni, Tarih: 05.08.2024, Saat: 09:30-11:30. Onay için yöneticinize ileteceğim. Başka bir isteğiniz var mı?"]
+        }
+    ]
+}
