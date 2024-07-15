@@ -1,0 +1,5 @@
+nlp_env/lib/python3.11/site-packages/clang/native/libclang.dylib filter=lfs diff=lfs merge=lfs -text
+nlp_env/lib/python3.11/site-packages/torch/lib/libtorch_cpu.dylib filter=lfs diff=lfs merge=lfs -text
+nlp_env/lib/python3.11/site-packages/tensorflow/libtensorflow_cc.2.dylib filter=lfs diff=lfs merge=lfs -text
+nlp/models/intent_model.pth filter=lfs diff=lfs merge=lfs -text
+nlp/models/optimized_intent_model.pth filter=lfs diff=lfs merge=lfs -text
