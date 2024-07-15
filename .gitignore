@@ -206,3 +206,8 @@ out/
 *.env.production.local
 /.pnp
 .pnp.js
+
+# Ignore large files
+/nlp_env/*
+
+/nlp/models/*
