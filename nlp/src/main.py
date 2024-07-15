@@ -1,22 +1,21 @@
-from chatbot.bot import Chatbot
-from data_utils import augment_data, update_model
-from model_utils import evaluate_model, optimize_hyperparameters, cross_validate
-from intent_recognition import IntentDataset, classify_intent
-from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader
-from transformers import BertTokenizer, BertForSequenceClassification
 import json
 import torch
 import random
-import sys
+from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
+from torch.utils.data import DataLoader
+from sklearn.model_selection import train_test_split
+from intent_recognition import IntentDataset, classify_intent
+from model_utils import evaluate_model, optimize_hyperparameters, cross_validate
+from data_utils import augment_data
+from chatbot.bot import Chatbot
 import os
 
-# Proje kök dizinini Python yoluna ekle
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
+# Proje kök dizinini al
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Veri yükleme
-with open(os.path.join(os.path.dirname(__file__), '../data/intent_data.json'), 'r', encoding='utf-8') as f:
+data_path = os.path.join(project_root, 'data', 'intent_data.json')
+with open(data_path, 'r', encoding='utf-8') as f:
     data = json.load(f)
 
 # Veriyi hazırlama
@@ -42,13 +41,36 @@ augmented_texts, augmented_labels = zip(*combined)
 X_train, X_test, y_train, y_test = train_test_split(
     augmented_texts, augmented_labels, test_size=0.2, random_state=42)
 
-# BERT tokenizer ve model
-tokenizer = BertTokenizer.from_pretrained('dbmdz/bert-base-turkish-cased')
-model = BertForSequenceClassification.from_pretrained(
-    'dbmdz/bert-base-turkish-cased', num_labels=len(label_dict))
+# DistilBERT tokenizer ve model
+model_name = 'distilbert-base-multilingual-cased'
+tokenizer = DistilBertTokenizer.from_pretrained(model_name)
+model = DistilBertForSequenceClassification.from_pretrained(
+    model_name, num_labels=len(label_dict))
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.to(device)
+
+# Tokenizer ve model uyumluluğunu kontrol et
+print(f"Tokenizer vocabulary size: {len(tokenizer.vocab)}")
+print(
+    f"Model embedding size: {model.distilbert.embeddings.word_embeddings.num_embeddings}")
+
+# Veri setinden örnek al ve tokenize et
+sample_text = texts[0]
+sample_encoding = tokenizer.encode_plus(
+    sample_text,
+    add_special_tokens=True,
+    max_length=128,
+    return_token_type_ids=False,
+    padding='max_length',
+    truncation=True,
+    return_attention_mask=True,
+    return_tensors='pt',
+)
+
+print(f"Sample text: {sample_text}")
+print(f"Encoded ids: {sample_encoding['input_ids']}")
+print(f"Max token id: {sample_encoding['input_ids'].max().item()}")
 
 # Hiper-parametre optimizasyonu
 best_params = optimize_hyperparameters(
@@ -82,11 +104,12 @@ test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 evaluate_model(model, test_loader, device)
 
 # Çapraz doğrulama
-cross_validate(augmented_texts, augmented_labels,
-               tokenizer, label_dict, device)
+cross_validate(X_train, y_train, tokenizer, label_dict, device)
 
 # Model kaydetme
-torch.save(model.state_dict(), '../models/optimized_intent_model.pth')
+model_save_path = os.path.join(
+    project_root, 'models', 'optimized_intent_model.pth')
+torch.save(model.state_dict(), model_save_path)
 
 # Test
 test_text = "İzin almak istiyorum"
@@ -96,27 +119,48 @@ print(f"Test text: {test_text}")
 print(f"Predicted intent: {predicted_intent}")
 print(f"Confidence: {confidence:.2f}")
 
-# Yeni veri ile model güncelleme örneği
-new_texts = ["Yeni bir özellik eklemek istiyorum",
-             "Proje durumunu öğrenmek istiyorum"]
-new_labels = ["feature_request", "project_status"]
-update_model(new_texts, new_labels, texts, labels,
-             label_dict, tokenizer, device)
-
 # Chatbot'u test et
 chatbot = Chatbot(model, tokenizer, label_dict, device)
 
-test_messages = [
-    "Merhaba",
-    "Yıllık izin almak istiyorum",
-    "01.08.2024 ve 05.08.2024 tarihleri için yıllık izin talebi oluşturabilir misin",
-    "Mazeret izni almak istiyorum",
-    "05.08.2024 tarihi 09:30-11:30 için mazeret izin talebi oluşturabilir misin",
-    "Yeni bir bilgisayar sipariş etmek istiyorum"
+test_conversations = [
+    [
+        "Merhaba",
+        "Yıllık izin almak istiyorum",
+        "01.08.2024 ve 05.08.2024 tarihleri arasında",
+        "Evet, başka bir şey yok",
+        "Bu izin talebimi iptal etmek istiyorum",
+        "Teşekkür ederim, iyi günler"
+    ],
+    [
+        "Selam",
+        "Mazeret izni almak istiyorum",
+        "Yarın 14:00-16:00 arası",
+        "Teşekkürler, bu kadar",
+        "Aslında biraz sinirliyim, çünkü izin almakta zorlanıyorum",
+        "Haklısın, biraz sakinleşmeliyim"
+    ],
+    [
+        "İyi günler",
+        "Yeni bir bilgisayar sipariş etmek istiyorum",
+        "MacBook Pro, 16 inç, M1 işlemcili model",
+        "Hayır, başka bir şey istemiyorum",
+        "Bu bilgisayarın fiyatı nedir?",
+        "Anladım, teşekkürler"
+    ]
 ]
 
-for message in test_messages:
-    response = chatbot.process_message(message)
-    print(f"User: {message}")
-    print(f"Bot: {response}")
-    print()
+for conversation in test_conversations:
+    print("Yeni Konuşma Başlıyor...")
+    for message in conversation:
+        print(f"User: {message}")
+        response = chatbot.process_message(message)
+        print(f"Bot: {response}")
+        print()
+    chatbot.reset_context()
+    print("Konuşma Bitti.\n")
+
+# Chatbot'un belleğini kontrol et
+print("Chatbot Belleği:")
+with open("chatbot_memory.json", "r") as f:
+    memory = json.load(f)
+print(json.dumps(memory, indent=2))

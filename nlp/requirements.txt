@@ -9,5 +9,6 @@ torchvision
 torchaudio
 scikit-learn
 numpy
+tqdm
 nlpaug==1.1.11
 nltk==3.6.7

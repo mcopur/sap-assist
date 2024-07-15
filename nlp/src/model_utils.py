@@ -4,6 +4,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import ParameterGrid, KFold
 from transformers import BertForSequenceClassification
 from intent_recognition import IntentDataset
+from transformers import DistilBertForSequenceClassification
 
 
 def evaluate_model(model, test_loader, device):
@@ -43,8 +44,8 @@ def optimize_hyperparameters(X_train, y_train, X_val, y_val, tokenizer, label_di
     best_params = None
 
     for params in ParameterGrid(param_grid):
-        model = BertForSequenceClassification.from_pretrained(
-            'dbmdz/bert-base-turkish-cased', num_labels=len(label_dict))
+        model = DistilBertForSequenceClassification.from_pretrained(
+            'distilbert-base-multilingual-cased', num_labels=len(label_dict))
         model.to(device)
 
         train_dataset = IntentDataset(X_train, y_train, tokenizer)
@@ -94,8 +95,8 @@ def cross_validate(X, y, tokenizer, label_dict, device, n_splits=5):
         y_train_fold, y_val_fold = [y[i]
                                     for i in train_index], [y[i] for i in val_index]
 
-        model = BertForSequenceClassification.from_pretrained(
-            'dbmdz/bert-base-turkish-cased', num_labels=len(label_dict))
+        model = DistilBertForSequenceClassification.from_pretrained(
+            'distilbert-base-multilingual-cased', num_labels=len(label_dict))
         model.to(device)
 
         train_dataset = IntentDataset(X_train_fold, y_train_fold, tokenizer)

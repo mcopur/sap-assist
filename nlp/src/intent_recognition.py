@@ -1,6 +1,5 @@
 import torch
 from torch.utils.data import Dataset
-from transformers import BertTokenizer, BertForSequenceClassification
 
 
 class IntentDataset(Dataset):
