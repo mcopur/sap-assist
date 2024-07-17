@@ -221,3 +221,5 @@ nlp/src/utils/results/*
 nlp/src/models/*
 
 nlp/tr_core_news_md-0.0.0-py3-none-any.whl
+nlp/src/utils/intent_classifier_model/*
+nlp/src/utils/logs/*

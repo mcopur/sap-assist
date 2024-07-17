@@ -1,173 +1,67 @@
-{
-    "intents": [
-        {
-            "tag": "greeting",
-            "patterns": [
-                "Merhaba",
-                "Selam",
-                "Nasılsın",
-                "İyi günler",
-                "Günaydın",
-                "İyi akşamlar",
-                "Selam, nasıl yardımcı olabilirsiniz?",
-                "Hey, orada mısın?",
-                "Günaydın, yardıma ihtiyacım var",
-                "İyi akşamlar, bir sorum olacaktı",
-                "Merhaba",
-                "Selam",
-                "Nasılsın",
-                "İyi günler",
-                "Günaydın",
-                "İyi akşamlar",
-                ", Selam nasıl olabilirsiniz ? yardımcı",
-                "? Hey mısın orada ,",
-                "var yardıma Günaydın ihtiyacım ,",
-                "İyi akşamlar bir olacaktı sorum ,"
-            ],
-            "responses": [
-                "Merhaba! Size nasıl yardımcı olabilirim?",
-                "Selam! Nasıl yardımcı olabilirim?"
-            ]
-        },
-        {
-            "tag": "leave_request_annual",
-            "patterns": [
-                "Yıllık izin almak istiyorum",
-                "Tatil için yıllık izin",
-                "Yıllık izin talep etmek istiyorum",
-                "Ne zaman yıllık izne çıkabilirim",
-                "Belirli tarihler için yıllık izin istiyorum",
-                "Yıllık izin kullanmak istiyorum",
-                "Bu yıl ne kadar iznim kaldı?",
-                "İzin haklarımı öğrenebilir miyim?",
-                "Gelecek ay için izin planlamak istiyorum",
-                "Yaz tatili için izin almam gerekiyor",
-                "Yıllık istiyorum almak izin",
-                "izin için Tatil yıllık",
-                "izin etmek istiyorum Yıllık talep",
-                "zaman çıkabilirim yıllık Ne izne",
-                "yıllık tarihler izin Belirli için istiyorum",
-                "istiyorum kullanmak Yıllık izin",
-                "yıl kaldı ? iznim Bu ne kadar",
-                "öğrenebilir miyim İzin ? haklarımı",
-                "planlamak Gelecek ay istiyorum izin için",
-                "izin almam için gerekiyor tatili Yaz"
-            ],
-            "responses": [
-                "Yıllık izin talebiniz için tarihleri alabilir miyim? Örneğin: 01.08.2024 ve 05.08.2024 arası"
-            ]
-        },
-        {
-            "tag": "leave_request_excuse",
-            "patterns": [
-                "Mazeret izni almak istiyorum",
-                "Kısa süreli izin lazım",
-                "Birkaç saatlik izin alabilir miyim",
-                "Mazeret izni talep etmek istiyorum",
-                "Acil bir durum için izin almam gerekiyor",
-                "Yarım gün izin kullanabilir miyim?",
-                "Doktor randevum var, izin alabilir miyim?",
-                "Kısa süreli bir izne ihtiyacım var",
-                "Ailevi sebeplerden dolayı izin talep ediyorum",
-                "Birkaç saatlik izin kullanmam mümkün mü?",
-                "almak izni istiyorum Mazeret",
-                "Kısa süreli lazım izin",
-                "izin Birkaç saatlik alabilir miyim",
-                "talep etmek istiyorum izni Mazeret",
-                "bir durum almam gerekiyor için izin Acil",
-                "? Yarım miyim gün kullanabilir izin",
-                "miyim alabilir ? izin Doktor , var randevum",
-                "Kısa izne var bir ihtiyacım süreli",
-                "Ailevi izin dolayı ediyorum talep sebeplerden",
-                "saatlik mü Birkaç ? mümkün izin kullanmam"
-            ],
-            "responses": [
-                "Mazeret izni talebiniz için tarih ve saatleri alabilir miyim? Örneğin: 05.08.2024 tarihi 09:30-11:30 arası"
-            ]
-        },
-        {
-            "tag": "purchase_request",
-            "patterns": [
-                "Satın alma talebi oluşturmak istiyorum",
-                "Yeni ekipman siparişi",
-                "Malzeme siparişi nasıl verebilirim",
-                "Ürün satın almak istiyorum",
-                "Yeni bir monitör sipariş etmem gerekiyor",
-                "Ofis malzemeleri için sipariş vermek istiyorum",
-                "Yazıcı kağıdı siparişi nasıl verebilirim?",
-                "Bilgisayarım için yeni bir fare almam gerekiyor",
-                "Şirket için yeni yazılım lisansı satın almak istiyorum",
-                "Toplantı odası için projeksiyon cihazı siparişi verebilir miyim?",
-                "Satın talebi oluşturmak istiyorum alma",
-                "Yeni ekipman siparişi",
-                "nasıl Malzeme siparişi verebilirim",
-                "istiyorum satın almak Ürün",
-                "bir gerekiyor etmem monitör sipariş Yeni",
-                "vermek için malzemeleri istiyorum sipariş Ofis",
-                "nasıl kağıdı siparişi Yazıcı verebilirim ?",
-                "yeni için almam bir fare Bilgisayarım gerekiyor",
-                "yeni için satın lisansı almak Şirket istiyorum yazılım",
-                "cihazı siparişi ? için projeksiyon verebilir odası Toplantı miyim"
-            ],
-            "responses": [
-                "Satın alma talebiniz için hangi ürünü veya hizmeti talep etmek istiyorsunuz?"
-            ]
-        },
-        {
-            "tag": "confirm_annual_leave",
-            "patterns": [
-                "01.08.2024 ve 05.08.2024 tarihleri için yıllık izin talebi oluşturabilir misin",
-                "1 Ağustos'tan 5 Ağustos'a kadar yıllık izin istiyorum",
-                "15 Temmuz'dan 30 Temmuz'a kadar yıllık izin kullanmak istiyorum",
-                "Önümüzdeki ay 10 gün izin kullanabilir miyim?",
-                "2 haftalık yıllık iznimi onaylayabilir misiniz?",
-                "Ağustos ayı için 3 haftalık izin talebim var",
-                "10.09.2024 ile 24.09.2024 tarihleri arasında izin kullanmak istiyorum",
-                "Yılbaşından sonra 5 günlük izin almak istiyorum, onaylayabilir misiniz?",
-                "Mayıs ayının ilk iki haftası için izin talebinde bulunmak istiyorum",
-                "6 Ekim'den başlayarak 2 haftalık izin alabilir miyim?",
-                "oluşturabilir misin tarihleri talebi için 01.08.2024 yıllık izin ve 05.08.2024",
-                "Ağustos kadar a 1 izin 5 Ağustos'tan ' istiyorum yıllık",
-                "15 kullanmak izin kadar a istiyorum yıllık ' Temmuz'dan Temmuz 30",
-                "Önümüzdeki izin kullanabilir 10 ay ? gün miyim",
-                "? misiniz yıllık haftalık iznimi 2 onaylayabilir",
-                "talebim ayı var 3 Ağustos haftalık için izin",
-                "izin istiyorum 24.09.2024 tarihleri kullanmak ile 10.09.2024 arasında",
-                "Yılbaşından misiniz izin günlük istiyorum almak , ? onaylayabilir 5 sonra",
-                "için ilk izin iki Mayıs bulunmak istiyorum haftası talebinde ayının",
-                "2 ? izin 6 başlayarak miyim haftalık Ekim'den alabilir"
-            ],
-            "responses": [
-                "Yıllık izin talebinizi aldım. İzin türü: Yıllık İzin, Başlangıç: 01.08.2024, Bitiş: 05.08.2024. Onay için yöneticinize ileteceğim. Başka bir isteğiniz var mı?"
-            ]
-        },
-        {
-            "tag": "confirm_excuse_leave",
-            "patterns": [
-                "05.08.2024 tarihi 09:30-11:30 için mazeret izin talebi oluşturabilir misin",
-                "5 Ağustos sabahı 2 saatlik mazeret izni istiyorum",
-                "Yarın öğleden sonra 2 saatlik izin kullanabilir miyim?",
-                "Cuma günü 10:00-12:00 arası izinli sayılabilir miyim?",
-                "Pazartesi sabahı geç gelmem gerekiyor, izin verebilir misiniz?",
-                "Çarşamba öğleden sonra doktor randevum var, 2 saat izin alabilir miyim?",
-                "Bugün 15:00'ten sonra çocuğumu okuldan almam gerekiyor, izinli olabilir miyim?",
-                "Yarın sabah banka işlerim var, 09:00-11:00 arası izin kullanabilir miyim?",
-                "Öğle arasını 2 saat kullanmam mümkün mü bugün?",
-                "Perşembe günü 14:00-16:00 arası kısa bir izne ihtiyacım var",
-                "için izin misin mazeret talebi tarihi 05.08.2024 09:30-11:30 oluşturabilir",
-                "izni mazeret 5 Ağustos sabahı 2 istiyorum saatlik",
-                "? saatlik kullanabilir sonra izin miyim Yarın öğleden 2",
-                "Cuma günü ? 10:00-12:00 izinli arası sayılabilir miyim",
-                "Pazartesi , ? misiniz izin verebilir geç gerekiyor gelmem sabahı",
-                "? saat randevum , sonra izin 2 öğleden var miyim doktor Çarşamba alabilir",
-                "15:00'ten olabilir almam Bugün ? , okuldan sonra miyim çocuğumu gerekiyor izinli",
-                "? izin miyim var Yarın işlerim banka , arası 09:00-11:00 kullanabilir sabah",
-                "mü Öğle bugün ? arasını mümkün 2 saat kullanmam",
-                "var 14:00-16:00 kısa arası izne ihtiyacım Perşembe günü bir"
-            ],
-            "responses": [
-                "Mazeret izni talebinizi aldım. İzin türü: Mazeret İzni, Tarih: 05.08.2024, Saat: 09:30-11:30. Onay için yöneticinize ileteceğim. Başka bir isteğiniz var mı?"
-            ]
-        }
-    ]
-}
+[
+    {"text": "Merhaba", "intent": "greeting"},
+    {"text": "Selam", "intent": "greeting"},
+    {"text": "Nasılsın", "intent": "greeting"},
+    {"text": "İyi günler", "intent": "greeting"},
+    {"text": "Günaydın", "intent": "greeting"},
+    {"text": "İyi akşamlar", "intent": "greeting"},
+    {"text": "Selam, nasıl yardımcı olabilirsiniz?", "intent": "greeting"},
+    {"text": "Hey, orada mısın?", "intent": "greeting"},
+    {"text": "Günaydın, yardıma ihtiyacım var", "intent": "greeting"},
+    {"text": "İyi akşamlar, bir sorum olacaktı", "intent": "greeting"},
+    
+    {"text": "Yıllık izin almak istiyorum", "intent": "leave_request_annual"},
+    {"text": "Tatil için yıllık izin", "intent": "leave_request_annual"},
+    {"text": "Yıllık izin talep etmek istiyorum", "intent": "leave_request_annual"},
+    {"text": "Ne zaman yıllık izne çıkabilirim", "intent": "leave_request_annual"},
+    {"text": "Belirli tarihler için yıllık izin istiyorum", "intent": "leave_request_annual"},
+    {"text": "Yıllık izin kullanmak istiyorum", "intent": "leave_request_annual"},
+    {"text": "Bu yıl ne kadar iznim kaldı?", "intent": "leave_request_annual"},
+    {"text": "İzin haklarımı öğrenebilir miyim?", "intent": "leave_request_annual"},
+    {"text": "Gelecek ay için izin planlamak istiyorum", "intent": "leave_request_annual"},
+    {"text": "Yaz tatili için izin almam gerekiyor", "intent": "leave_request_annual"},
+    
+    {"text": "Mazeret izni almak istiyorum", "intent": "leave_request_excuse"},
+    {"text": "Kısa süreli izin lazım", "intent": "leave_request_excuse"},
+    {"text": "Birkaç saatlik izin alabilir miyim", "intent": "leave_request_excuse"},
+    {"text": "Mazeret izni talep etmek istiyorum", "intent": "leave_request_excuse"},
+    {"text": "Acil bir durum için izin almam gerekiyor", "intent": "leave_request_excuse"},
+    {"text": "Yarım gün izin kullanabilir miyim?", "intent": "leave_request_excuse"},
+    {"text": "Doktor randevum var, izin alabilir miyim?", "intent": "leave_request_excuse"},
+    {"text": "Kısa süreli bir izne ihtiyacım var", "intent": "leave_request_excuse"},
+    {"text": "Ailevi sebeplerden dolayı izin talep ediyorum", "intent": "leave_request_excuse"},
+    {"text": "Birkaç saatlik izin kullanmam mümkün mü?", "intent": "leave_request_excuse"},
+    
+    {"text": "Satın alma talebi oluşturmak istiyorum", "intent": "purchase_request"},
+    {"text": "Yeni ekipman siparişi", "intent": "purchase_request"},
+    {"text": "Malzeme siparişi nasıl verebilirim", "intent": "purchase_request"},
+    {"text": "Ürün satın almak istiyorum", "intent": "purchase_request"},
+    {"text": "Yeni bir monitör sipariş etmem gerekiyor", "intent": "purchase_request"},
+    {"text": "Ofis malzemeleri için sipariş vermek istiyorum", "intent": "purchase_request"},
+    {"text": "Yazıcı kağıdı siparişi nasıl verebilirim?", "intent": "purchase_request"},
+    {"text": "Bilgisayarım için yeni bir fare almam gerekiyor", "intent": "purchase_request"},
+    {"text": "Şirket için yeni yazılım lisansı satın almak istiyorum", "intent": "purchase_request"},
+    {"text": "Toplantı odası için projeksiyon cihazı siparişi verebilir miyim?", "intent": "purchase_request"},
+    
+    {"text": "01.08.2024 ve 05.08.2024 tarihleri için yıllık izin talebi oluşturabilir misin", "intent": "confirm_annual_leave"},
+    {"text": "1 Ağustos'tan 5 Ağustos'a kadar yıllık izin istiyorum", "intent": "confirm_annual_leave"},
+    {"text": "15 Temmuz'dan 30 Temmuz'a kadar yıllık izin kullanmak istiyorum", "intent": "confirm_annual_leave"},
+    {"text": "Önümüzdeki ay 10 gün izin kullanabilir miyim?", "intent": "confirm_annual_leave"},
+    {"text": "2 haftalık yıllık iznimi onaylayabilir misiniz?", "intent": "confirm_annual_leave"},
+    {"text": "Ağustos ayı için 3 haftalık izin talebim var", "intent": "confirm_annual_leave"},
+    {"text": "10.09.2024 ile 24.09.2024 tarihleri arasında izin kullanmak istiyorum", "intent": "confirm_annual_leave"},
+    {"text": "Yılbaşından sonra 5 günlük izin almak istiyorum, onaylayabilir misiniz?", "intent": "confirm_annual_leave"},
+    {"text": "Mayıs ayının ilk iki haftası için izin talebinde bulunmak istiyorum", "intent": "confirm_annual_leave"},
+    {"text": "6 Ekim'den başlayarak 2 haftalık izin alabilir miyim?", "intent": "confirm_annual_leave"},
+    
+    {"text": "05.08.2024 tarihi 09:30-11:30 için mazeret izin talebi oluşturabilir misin", "intent": "confirm_excuse_leave"},
+    {"text": "5 Ağustos sabahı 2 saatlik mazeret izni istiyorum", "intent": "confirm_excuse_leave"},
+    {"text": "Yarın öğleden sonra 2 saatlik izin kullanabilir miyim?", "intent": "confirm_excuse_leave"},
+    {"text": "Cuma günü 10:00-12:00 arası izinli sayılabilir miyim?", "intent": "confirm_excuse_leave"},
+    {"text": "Pazartesi sabahı geç gelmem gerekiyor, izin verebilir misiniz?", "intent": "confirm_excuse_leave"},
+    {"text": "Çarşamba öğleden sonra doktor randevum var, 2 saat izin alabilir miyim?", "intent": "confirm_excuse_leave"},
+    {"text": "Bugün 15:00'ten sonra çocuğumu okuldan almam gerekiyor, izinli olabilir miyim?", "intent": "confirm_excuse_leave"},
+    {"text": "Yarın sabah banka işlerim var, 09:00-11:00 arası izin kullanabilir miyim?", "intent": "confirm_excuse_leave"},
+    {"text": "Öğle arasını 2 saat kullanmam mümkün mü bugün?", "intent": "confirm_excuse_leave"},
+    {"text": "Perşembe günü 14:00-16:00 arası kısa bir izne ihtiyacım var", "intent": "confirm_excuse_leave"}
+  ]
