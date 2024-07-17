@@ -1,23 +1,17 @@
-
 from datetime import datetime, timedelta
 
 
-def validate_date(date_str):
-    try:
-        date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        if date < datetime.now().date():
-            return False, "Geçmiş tarihler için izin talebi oluşturamazsınız."
-        return True, None
-    except ValueError:
-        return False, "Geçersiz tarih formatı. Lütfen 'YYYY-MM-DD' formatında bir tarih girin."
+def validate_date(date):
+    if date < datetime.now().date():
+        return False, "Geçmiş tarihler için izin talebi oluşturamazsınız."
+    if date > datetime.now().date() + timedelta(days=365):
+        return False, "En fazla bir yıl ilerisine kadar izin talebi oluşturabilirsiniz."
+    return True, None
 
 
-def validate_time(time_str):
-    try:
-        time = datetime.strptime(time_str, '%H:%M').time()
-        return True, None
-    except ValueError:
-        return False, "Geçersiz saat formatı. Lütfen 'HH:MM' formatında bir saat girin."
+def validate_time(time):
+    # Burada gerekirse saat doğrulaması yapabilirsiniz
+    return True, None
 
 
 def validate_duration(duration_minutes):
@@ -51,8 +45,8 @@ def validate_leave_request(start_date, end_date, start_time, end_time, duration)
         is_valid, message = validate_time(end_time)
         if not is_valid:
             return False, message
-        if start_time and end_time < start_time:
-            return False, "Bitiş saati başlangıç saatinden önce olamaz."
+        if start_time and end_time <= start_time:
+            return False, "Bitiş saati başlangıç saatinden sonra olmalıdır."
 
     # Süre kontrolü
     if duration:
@@ -62,8 +56,7 @@ def validate_leave_request(start_date, end_date, start_time, end_time, duration)
 
     # Tarih aralığı kontrolü
     if start_date and end_date:
-        date_diff = (datetime.strptime(end_date, '%Y-%m-%d') -
-                     datetime.strptime(start_date, '%Y-%m-%d')).days
+        date_diff = (end_date - start_date).days
         if date_diff > 30:
             return False, "En fazla 30 günlük izin talep edebilirsiniz."
 

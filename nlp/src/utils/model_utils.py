@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import ParameterGrid, KFold
 from transformers import BertForSequenceClassification
-from intent_recognition import IntentDataset
+from nlp.src.utils.intent_recognition import IntentDataset
 from transformers import DistilBertForSequenceClassification
 
 

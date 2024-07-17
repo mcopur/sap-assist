@@ -1,7 +1,7 @@
 # nlp/src/utils/normalizer.py
 
 import re
-from datetime import datetime, time
+from datetime import datetime
 
 
 def normalize_date(date_string):
