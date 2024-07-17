@@ -53,6 +53,12 @@
     {"text": "Yılbaşından sonra 5 günlük izin almak istiyorum, onaylayabilir misiniz?", "intent": "confirm_annual_leave"},
     {"text": "Mayıs ayının ilk iki haftası için izin talebinde bulunmak istiyorum", "intent": "confirm_annual_leave"},
     {"text": "6 Ekim'den başlayarak 2 haftalık izin alabilir miyim?", "intent": "confirm_annual_leave"},
+    {"text": "01.08.2024 ve 05.08.2024 arası", "intent": "confirm_annual_leave"},
+    {"text": "1 Ağustos'tan 5 Ağustos'a kadar", "intent": "confirm_annual_leave"},
+    {"text": "01/08/2024 - 05/08/2024", "intent": "confirm_annual_leave"},
+    {"text": "Ağustos'un ilk haftası", "intent": "confirm_annual_leave"},
+    {"text": "01.01.2025 ile 10.01.2025 arasında", "intent": "confirm_annual_leave"},
+    {"text": "Ocak ayının ilk on günü", "intent": "confirm_annual_leave"},
     
     {"text": "05.08.2024 tarihi 09:30-11:30 için mazeret izin talebi oluşturabilir misin", "intent": "confirm_excuse_leave"},
     {"text": "5 Ağustos sabahı 2 saatlik mazeret izni istiyorum", "intent": "confirm_excuse_leave"},
@@ -63,5 +69,12 @@
     {"text": "Bugün 15:00'ten sonra çocuğumu okuldan almam gerekiyor, izinli olabilir miyim?", "intent": "confirm_excuse_leave"},
     {"text": "Yarın sabah banka işlerim var, 09:00-11:00 arası izin kullanabilir miyim?", "intent": "confirm_excuse_leave"},
     {"text": "Öğle arasını 2 saat kullanmam mümkün mü bugün?", "intent": "confirm_excuse_leave"},
-    {"text": "Perşembe günü 14:00-16:00 arası kısa bir izne ihtiyacım var", "intent": "confirm_excuse_leave"}
+    {"text": "Perşembe günü 14:00-16:00 arası kısa bir izne ihtiyacım var", "intent": "confirm_excuse_leave"},
+
+    {"text": "Hayır, teşekkürler", "intent": "end_conversation"},
+    {"text": "Hayır", "intent": "end_conversation"},
+    {"text": "Başka bir şey yok", "intent": "end_conversation"},
+    {"text": "Bu kadar", "intent": "end_conversation"},
+    {"text": "Görüşürüz", "intent": "end_conversation"},
+    {"text": "İyi günler", "intent": "end_conversation"}
   ]
