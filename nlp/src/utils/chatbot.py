@@ -55,18 +55,18 @@ def chatbot_response(intent, confidence, user_input):
         return "Üzgünüm, bu tür bir talebi şu anda işleyemiyorum. Lütfen başka bir şekilde ifade etmeyi deneyin."
 
 
-print("Chatbot: Merhaba! Size nasıl yardımcı olabilirim?")
+# print("Chatbot: Merhaba! Size nasıl yardımcı olabilirim?")
 
-while True:
-    user_input = input("Siz: ")
-    if user_input.lower() == 'çıkış':
-        print("Chatbot: Görüşmek üzere!")
-        break
+# while True:
+#    user_input = input("Siz: ")
+#    if user_input.lower() == 'çıkış':
+#        print("Chatbot: Görüşmek üzere!")
+#        break
 
-    intent, confidence = classify_intent(user_input)
-    response = chatbot_response(intent, confidence, user_input)
-    print(f"Chatbot: {response}")
+#    intent, confidence = classify_intent(user_input)
+#    response = chatbot_response(intent, confidence, user_input)
+#    print(f"Chatbot: {response}")
 
-    if intent == 'end_conversation':
-        print("Chatbot: İyi günler! Başka bir sorunuz olursa yardımcı olmaktan memnuniyet duyarım.")
-        break
+#    if intent == 'end_conversation':
+#        print("Chatbot: İyi günler! Başka bir sorunuz olursa yardımcı olmaktan memnuniyet duyarım.")
+#        break

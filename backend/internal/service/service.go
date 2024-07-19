@@ -7,11 +7,12 @@ import (
 )
 
 type Service struct {
-	repo *repository.PostgresRepository
+	repo      *repository.PostgresRepository
+	NLPService *NLPService  // NLPService alanını ekleyin
 }
 
-func NewService(repo *repository.PostgresRepository) *Service {
-	return &Service{repo: repo}
+func NewService(repo *repository.PostgresRepository, nlpService *NLPService) *Service {
+	return &Service{repo: repo, NLPService: nlpService}  // NLPService'i burada atayın
 }
 
 // User Service Methods

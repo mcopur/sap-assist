@@ -52,7 +52,3 @@ def main():
             chatbot.model = model
             chatbot.label_dict = label_dict
             chatbot.reverse_label_dict = {v: k for k, v in label_dict.items()}
-
-
-if __name__ == "__main__":
-    main()

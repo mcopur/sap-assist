@@ -12,11 +12,11 @@ import (
 )
 
 type APIv1 struct {
-	svc *service.Service
+	service *service.Service
 }
 
-func NewAPIv1(svc *service.Service) *APIv1 {
-	return &APIv1{svc: svc}
+func NewAPIv1(service *service.Service) *APIv1 {
+	return &APIv1{service: service}
 }
 
 func (api *APIv1) RegisterRoutes(r *mux.Router) {
@@ -36,6 +36,28 @@ func (api *APIv1) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/purchase-requests/{id}", api.updatePurchaseRequestHandler).Methods("PUT")
 	r.HandleFunc("/purchase-requests/{id}", api.deletePurchaseRequestHandler).Methods("DELETE")
 	r.HandleFunc("/users/{userId}/purchase-requests", api.getPurchaseRequestsByUserHandler).Methods("GET")
+
+	r.HandleFunc("/classify", api.ClassifyIntentHandler).Methods("POST")
+}
+
+func (api *APIv1) ClassifyIntentHandler(w http.ResponseWriter, r *http.Request) {
+	var userInput models.UserInput
+	if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	intent, confidence, err := api.service.NLPService.ClassifyIntent(userInput.Text)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := models.IntentResponse{
+		Intent:     intent,
+		Confidence: confidence,
+	}
+	json.NewEncoder(w).Encode(response)
 }
 
 // @Summary Create a new user
@@ -54,7 +76,7 @@ func (api *APIv1) createUserHandler(w http.ResponseWriter, r *http.Request) {
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	if err := api.svc.CreateUser(&user); err != nil {
+	if err := api.service.CreateUser(&user); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create user")
 		return
 	}
@@ -78,7 +100,7 @@ func (api *APIv1) getUserHandler(w http.ResponseWriter, r *http.Request) {
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid user ID")
 		return
 	}
-	user, err := api.svc.GetUserByID(id)
+	user, err := api.service.GetUserByID(id)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusNotFound, "User not found")
 		return
@@ -110,7 +132,7 @@ func (api *APIv1) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user.ID = id
-	if err := api.svc.UpdateUser(&user); err != nil {
+	if err := api.service.UpdateUser(&user); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update user")
 		return
 	}
@@ -134,7 +156,7 @@ func (api *APIv1) deleteUserHandler(w http.ResponseWriter, r *http.Request) {
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid user ID")
 		return
 	}
-	if err := api.svc.DeleteUser(id); err != nil {
+	if err := api.service.DeleteUser(id); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to delete user")
 		return
 	}
@@ -157,7 +179,7 @@ func (api *APIv1) createLeaveRequestHandler(w http.ResponseWriter, r *http.Reque
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	if err := api.svc.CreateLeaveRequest(&request); err != nil {
+	if err := api.service.CreateLeaveRequest(&request); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create leave request")
 		return
 	}
@@ -181,7 +203,7 @@ func (api *APIv1) getLeaveRequestHandler(w http.ResponseWriter, r *http.Request)
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid leave request ID")
 		return
 	}
-	request, err := api.svc.GetLeaveRequestByID(id)
+	request, err := api.service.GetLeaveRequestByID(id)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusNotFound, "Leave request not found")
 		return
@@ -213,7 +235,7 @@ func (api *APIv1) updateLeaveRequestHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	request.ID = id
-	if err := api.svc.UpdateLeaveRequest(&request); err != nil {
+	if err := api.service.UpdateLeaveRequest(&request); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update leave request")
 		return
 	}
@@ -237,7 +259,7 @@ func (api *APIv1) deleteLeaveRequestHandler(w http.ResponseWriter, r *http.Reque
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid leave request ID")
 		return
 	}
-	if err := api.svc.DeleteLeaveRequest(id); err != nil {
+	if err := api.service.DeleteLeaveRequest(id); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to delete leave request")
 		return
 	}
@@ -272,7 +294,7 @@ func (api *APIv1) getLeaveRequestsByUserHandler(w http.ResponseWriter, r *http.R
 			pagination.Limit = limit
 		}
 	}
-	requests, err := api.svc.GetLeaveRequestsByUserID(userID, pagination)
+	requests, err := api.service.GetLeaveRequestsByUserID(userID, pagination)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to get leave requests")
 		return
@@ -296,7 +318,7 @@ func (api *APIv1) createPurchaseRequestHandler(w http.ResponseWriter, r *http.Re
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	if err := api.svc.CreatePurchaseRequest(&request); err != nil {
+	if err := api.service.CreatePurchaseRequest(&request); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create purchase request")
 		return
 	}
@@ -320,7 +342,7 @@ func (api *APIv1) getPurchaseRequestHandler(w http.ResponseWriter, r *http.Reque
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid purchase request ID")
 		return
 	}
-	request, err := api.svc.GetPurchaseRequestByID(id)
+	request, err := api.service.GetPurchaseRequestByID(id)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusNotFound, "Purchase request not found")
 		return
@@ -352,7 +374,7 @@ func (api *APIv1) updatePurchaseRequestHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 	request.ID = id
-	if err := api.svc.UpdatePurchaseRequest(&request); err != nil {
+	if err := api.service.UpdatePurchaseRequest(&request); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update purchase request")
 		return
 	}
@@ -376,7 +398,7 @@ func (api *APIv1) deletePurchaseRequestHandler(w http.ResponseWriter, r *http.Re
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid purchase request ID")
 		return
 	}
-	if err := api.svc.DeletePurchaseRequest(id); err != nil {
+	if err := api.service.DeletePurchaseRequest(id); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to delete purchase request")
 		return
 	}
@@ -411,7 +433,7 @@ func (api *APIv1) getPurchaseRequestsByUserHandler(w http.ResponseWriter, r *htt
 			pagination.Limit = limit
 		}
 	}
-	requests, err := api.svc.GetPurchaseRequestsByUserID(userID, pagination)
+	requests, err := api.service.GetPurchaseRequestsByUserID(userID, pagination)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to get purchase requests")
 		return
