@@ -48,7 +48,7 @@ func (api *APIv1) ClassifyIntentHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	intent, confidence, err := api.service.NLPService.ClassifyIntent(userInput.Text)
+	intent, confidence, msg, err := api.service.NLPService.ClassifyIntent(userInput.Text)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -57,6 +57,7 @@ func (api *APIv1) ClassifyIntentHandler(w http.ResponseWriter, r *http.Request) 
 	response := models.IntentResponse{
 		Intent:     intent,
 		Confidence: confidence,
+		Response:   msg,
 	}
 
 	if intent == "confirm_annual_leave" {

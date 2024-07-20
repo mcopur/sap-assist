@@ -25,7 +25,7 @@ export const sendMessage = createAsyncThunk(
       const context = state.chat.context;
       const nlpResponse = await processMessage(message, context);
       
-      let reply = `Intent: ${nlpResponse.intent}, Confidence: ${nlpResponse.confidence}`;
+      let reply = `Intent: ${nlpResponse.intent}, Confidence: ${nlpResponse.confidence}, Message: ${nlpResponse.response}`;
       
       const newContext = { ...context, lastIntent: nlpResponse.intent };
       
