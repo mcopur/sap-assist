@@ -1,17 +1,40 @@
-import React from 'react';
-import { Box, Paper, CircularProgress } from '@mui/material';
+import React, { useRef, useEffect } from 'react';
+import { Box, Paper, CircularProgress, Button } from '@mui/material';
 import MessageList from './MessageList';
 import UserInput from './UserInput';
+import SuggestionChips from './SuggestionChips';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../store';
-import { sendMessage } from '../store/chatSlice';
+import { RootState, AppDispatch } from '../store';
+import { sendMessage, resetChat } from '../store/chatSlice';
 
 const ChatInterface: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { messages, status } = useSelector((state: RootState) => state.chat);
+  const messagesEndRef = useRef<null | HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(scrollToBottom, [messages]);
 
   const handleSendMessage = (message: string) => {
     dispatch(sendMessage(message));
+  };
+
+  const handleResetChat = () => {
+    dispatch(resetChat());
+  };
+
+  const suggestions = [
+    "What's my leave balance?",
+    "I want to request a leave",
+    "Show my recent purchase requests",
+    "How do I submit a new purchase request?"
+  ];
+
+  const handleSuggestionClick = (suggestion: string) => {
+    dispatch(sendMessage(suggestion));
   };
 
   return (
@@ -23,8 +46,15 @@ const ChatInterface: React.FC = () => {
             <CircularProgress />
           </Box>
         )}
+        <div ref={messagesEndRef} />
       </Box>
-      <UserInput onSendMessage={handleSendMessage} disabled={status === 'loading'} />
+      <Box sx={{ p: 2, backgroundColor: 'background.default' }}>
+        <SuggestionChips suggestions={suggestions} onSuggestionClick={handleSuggestionClick} />
+        <Button variant="outlined" onClick={handleResetChat} sx={{ mb: 2 }}>
+          Reset Chat
+        </Button>
+        <UserInput onSendMessage={handleSendMessage} disabled={status === 'loading'} />
+      </Box>
     </Paper>
   );
 };

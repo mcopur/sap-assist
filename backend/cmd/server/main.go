@@ -1,19 +1,19 @@
 package main
 
 import (
-    "fmt"
-    "log"
-    "net/http"
+	"fmt"
+	"log"
+	"net/http"
 
-    "github.com/gorilla/handlers"
-    "github.com/gorilla/mux"
-    "github.com/mcopur/sap-assist/internal/api/v1"
-    "github.com/mcopur/sap-assist/internal/config"
-    "github.com/mcopur/sap-assist/internal/database"
-    "github.com/mcopur/sap-assist/internal/middleware"
-    "github.com/mcopur/sap-assist/internal/service"
-    httpSwagger "github.com/swaggo/http-swagger"
-    "golang.org/x/time/rate"
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
+	v1 "github.com/mcopur/sap-assist/internal/api/v1"
+	"github.com/mcopur/sap-assist/internal/config"
+	"github.com/mcopur/sap-assist/internal/database"
+	"github.com/mcopur/sap-assist/internal/middleware"
+	"github.com/mcopur/sap-assist/internal/service"
+	httpSwagger "github.com/swaggo/http-swagger"
+	"golang.org/x/time/rate"
 )
 
 // @title SAP Assist API
@@ -32,41 +32,54 @@ import (
 // @BasePath /api/v1
 
 func main() {
-    cfg, err := config.LoadConfig()
-    if err != nil {
-        log.Fatalf("Failed to load config: %v", err)
-    }
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
 
-    db, err := database.InitDB(cfg)
-    if err != nil {
-        log.Fatalf("Failed to initialize database: %v", err)
-    }
-    defer db.Close()
+	db, err := database.InitDB(cfg)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer db.Close()
 
-    repo := database.NewRepository(db)
-    nlpService := service.NewNLPService("http://localhost:5000") // NLP servisi URL'sini buraya girin
-    svc := service.NewService(repo, nlpService) // NLPService'i burada atayın
+	repo := database.NewRepository(db)
+	nlpService := service.NewNLPService("http://localhost:5000") // NLP servisi URL'sini buraya girin
+	svc := service.NewService(repo, nlpService)                  // NLPService'i burada atayın
 
-    limiter := middleware.NewIPRateLimiter(rate.Limit(5), 10)
-    r := mux.NewRouter()
+	limiter := middleware.NewIPRateLimiter(rate.Limit(5), 10)
 
-    // Middleware'leri uygulama
-    r.Use(func(next http.Handler) http.Handler {
-        return middleware.Logging(next.ServeHTTP)
-    })
-    r.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
-    r.Use(func(next http.Handler) http.Handler {
-        return middleware.RateLimit(limiter)(next.ServeHTTP)
-    })
+	corsOptions := handlers.CORS(
+		handlers.AllowedOrigins([]string{"http://localhost:5173"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+		handlers.AllowCredentials(),
+	)
 
-    // Swagger
-    r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+	r := mux.NewRouter()
 
-    // API v1
-    apiV1 := v1.NewAPIv1(svc)
-    apiV1Router := r.PathPrefix("/api/v1").Subrouter()
-    apiV1.RegisterRoutes(apiV1Router)
+	// Middleware'leri uygulama
+	r.Use(func(next http.Handler) http.Handler {
+		return middleware.Logging(next.ServeHTTP)
+	})
+	r.Use(corsOptions)
+	r.Use(func(next http.Handler) http.Handler {
+		return middleware.RateLimit(limiter)(next.ServeHTTP)
+	})
 
-    log.Printf("Starting server on :%d", cfg.ServerPort)
-    log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.ServerPort), handlers.CompressHandler(r)))
+	// OPTIONS metodunu ele almak için handler
+	r.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// Swagger
+	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+
+	// API v1
+	apiV1 := v1.NewAPIv1(svc)
+	apiV1Router := r.PathPrefix("/api/v1").Subrouter()
+	apiV1.RegisterRoutes(apiV1Router)
+
+	log.Printf("Starting server on :%d", cfg.ServerPort)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.ServerPort), handlers.CompressHandler(r)))
 }

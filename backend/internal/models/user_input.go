@@ -2,5 +2,7 @@
 package models
 
 type UserInput struct {
-    Text string `json:"text"`
+    Text      string `json:"text"`
+    StartDate string `json:"start_date"`
+    EndDate   string `json:"end_date"`
 }

@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -57,6 +58,17 @@ func (api *APIv1) ClassifyIntentHandler(w http.ResponseWriter, r *http.Request) 
 		Intent:     intent,
 		Confidence: confidence,
 	}
+
+	if intent == "confirm_annual_leave" {
+		// Kullanıcıdan alınan tarih bilgilerini kullanarak leave request işlemini gerçekleştirme
+		leaveRequest, err := api.service.SendLeaveRequest("00000029", userInput.StartDate, userInput.EndDate)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		response.Response = fmt.Sprintf("Leave Request Successful: %v", leaveRequest)
+	}
+
 	json.NewEncoder(w).Encode(response)
 }
 

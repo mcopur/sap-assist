@@ -1,18 +1,63 @@
 package service
 
 import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+
 	"github.com/mcopur/sap-assist/internal/models"
 	"github.com/mcopur/sap-assist/internal/repository"
 	"github.com/mcopur/sap-assist/internal/utils"
 )
 
 type Service struct {
-	repo      *repository.PostgresRepository
-	NLPService *NLPService  // NLPService alanını ekleyin
+	repo       *repository.PostgresRepository
+	NLPService *NLPService
+	httpClient *http.Client
 }
 
 func NewService(repo *repository.PostgresRepository, nlpService *NLPService) *Service {
-	return &Service{repo: repo, NLPService: nlpService}  // NLPService'i burada atayın
+	return &Service{
+		repo:       repo,
+		NLPService: nlpService,
+		httpClient: &http.Client{},
+	}
+}
+
+func (s *Service) SendLeaveRequest(personnelNumber, startDate, endDate string) (interface{}, error) {
+	url := "https://10.1.4.21:44300/sap/opu/odata/sap/ZCXP_LEAVE_REQUEST_SRV/LEAVE_REQUESTSet"
+	payload := map[string]interface{}{
+		"d": map[string]interface{}{
+			"PersonnelNumber": personnelNumber,
+			"StartDate":       startDate,
+			"EndDate":         endDate,
+			"RequestId":       "0AA94D873C191EDAA6B96F42599EEB77",
+		},
+	}
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-CSRF-TOKEN", "FETCH")
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // User Service Methods

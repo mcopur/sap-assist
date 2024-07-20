@@ -2,6 +2,7 @@
 package models
 
 type IntentResponse struct {
-    Intent     string  `json:"intent"`
-    Confidence float64 `json:"confidence"`
+	Intent     string  `json:"intent"`
+	Confidence float64 `json:"confidence"`
+	Response   string  `json:"response,omitempty"`
 }
