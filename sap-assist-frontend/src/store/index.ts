@@ -1,3 +1,4 @@
+// sap-assist-frontend/src/store/index.ts
 import { configureStore } from '@reduxjs/toolkit';
 import chatReducer from './chatSlice';
 

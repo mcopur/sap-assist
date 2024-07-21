@@ -1,3 +1,4 @@
+// sap-assist-frontend/src/services/api.ts
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8080/api/v1';
@@ -16,10 +17,11 @@ export const sendMessageToNLP = async (message: string, context: any) => {
     return response.data;
   } catch (error) {
     console.error('Error sending message to NLP:', error);
-    if (axios.isAxiosError(error)) {
-      console.error('Response data:', error.response?.data);
-      console.error('Response status:', error.response?.status);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error('Response data:', error.response.data);
+      console.error('Response status:', error.response.status);
+      throw new Error(error.response.data.message || 'An error occurred while processing your request');
     }
-    throw error;
+    throw new Error('An unknown error occurred');
   }
 };

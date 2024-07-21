@@ -1,3 +1,4 @@
+// backend/internal/models/pagination.go
 package models
 
 type PaginationQuery struct {

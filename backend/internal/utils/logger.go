@@ -1,3 +1,4 @@
+// backend/internal/utils/errors.go
 package utils
 
 import (

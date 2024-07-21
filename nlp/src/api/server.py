@@ -1,3 +1,4 @@
+# nlp/src/api/server.py
 from flask import Flask, request, jsonify
 from src.utils.chatbot import classify_intent, chatbot_response
 
@@ -25,20 +26,18 @@ def send_leave_request(personnel_number, start_date, end_date):
 @app.route('/classify', methods=['POST'])
 def classify():
     data = request.get_json()
-    user_input = data.get('text')
+    if not data or 'text' not in data:
+        return jsonify({"error": "Invalid request payload"}), 400
+
+    user_input = data['text']
     intent, confidence = classify_intent(user_input)
     response_message = chatbot_response(intent, confidence, user_input)
 
-    if intent == 'confirm_annual_leave':
-        # SAP Leave Request işlemi
-        personnel_number = "00000029"
-        start_date = "2024-08-01"
-        end_date = "2024-08-05"
-        leave_response = send_leave_request(
-            personnel_number, start_date, end_date)
-        response_message += f"\nLeave Request Response: {leave_response}"
-
-    return jsonify({"intent": intent, "confidence": confidence, "response": response_message})
+    return jsonify({
+        "intent": intent,
+        "confidence": confidence,
+        "response": response_message
+    })
 
 
 if __name__ == '__main__':

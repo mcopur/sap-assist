@@ -1,6 +1,7 @@
+// sap-assist-frontend/src/store/chatSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Message } from '../types';
-import { processMessage } from '../services/nlp';
+import { sendMessageToNLP } from '../services/api';
 import { RootState } from './index';
 
 interface ChatState {
@@ -23,13 +24,18 @@ export const sendMessage = createAsyncThunk(
     try {
       const state = getState() as RootState;
       const context = state.chat.context;
-      const nlpResponse = await processMessage(message, context);
+      const response = await sendMessageToNLP(message, context);
       
-      let reply = `Intent: ${nlpResponse.intent}, Confidence: ${nlpResponse.confidence}, Message: ${nlpResponse.response}`;
+      if (!response || !response.intent) {
+        throw new Error('Invalid response from NLP service');
+      }
+
+      const newContext = { ...context, lastIntent: response.intent };
       
-      const newContext = { ...context, lastIntent: nlpResponse.intent };
-      
-      return { reply, newContext };
+      return { 
+        reply: response.response,
+        newContext 
+      };
     } catch (error) {
       console.error('Error in sendMessage:', error);
       return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');

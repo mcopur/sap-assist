@@ -1,3 +1,4 @@
+// sap-assist-frontend/src/components/SuggestionChips.tsx
 import React from 'react';
 import { Chip, Box } from '@mui/material';
 

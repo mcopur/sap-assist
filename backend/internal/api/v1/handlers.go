@@ -1,8 +1,10 @@
+// backend/internal/api/v1/handlers.go
 package v1
 
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -44,15 +46,18 @@ func (api *APIv1) RegisterRoutes(r *mux.Router) {
 func (api *APIv1) ClassifyIntentHandler(w http.ResponseWriter, r *http.Request) {
 	var userInput models.UserInput
 	if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	intent, confidence, msg, err := api.service.NLPService.ClassifyIntent(userInput.Text)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("Error classifying intent: %v", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Error classifying intent")
 		return
 	}
+
+	log.Printf("Classified intent: %s, Confidence: %f, Message: %s", intent, confidence, msg)
 
 	response := models.IntentResponse{
 		Intent:     intent,
@@ -60,17 +65,16 @@ func (api *APIv1) ClassifyIntentHandler(w http.ResponseWriter, r *http.Request) 
 		Response:   msg,
 	}
 
-	if intent == "confirm_annual_leave" {
-		// Kullanıcıdan alınan tarih bilgilerini kullanarak leave request işlemini gerçekleştirme
+	if intent == "confirm_annual_leave" || intent == "confirm_excuse_leave" {
 		leaveRequest, err := api.service.SendLeaveRequest("00000029", userInput.StartDate, userInput.EndDate)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.RespondWithError(w, http.StatusInternalServerError, "Error sending leave request")
 			return
 		}
 		response.Response = fmt.Sprintf("Leave Request Successful: %v", leaveRequest)
 	}
 
-	json.NewEncoder(w).Encode(response)
+	utils.RespondWithJSON(w, http.StatusOK, response)
 }
 
 // @Summary Create a new user

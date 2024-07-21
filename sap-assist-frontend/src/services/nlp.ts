@@ -1,3 +1,4 @@
+// sap-assist-frontend/src/services/nlp.ts
 import { sendMessageToNLP } from './api';
 
 interface NLPResponse {

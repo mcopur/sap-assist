@@ -1,3 +1,4 @@
+// sap-assist-frontend/src/components/ChatInterface.tsx
 import React, { useRef, useEffect } from 'react';
 import { Box, Paper, CircularProgress, Button } from '@mui/material';
 import MessageList from './MessageList';

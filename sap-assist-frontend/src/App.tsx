@@ -1,3 +1,4 @@
+// sap-assist-frontend/src/App.tsx
 import React from 'react';
 import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import { Provider } from 'react-redux';

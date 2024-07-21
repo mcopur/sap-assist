@@ -1,3 +1,4 @@
+// sap-assist-frontend/src/components/MessageList.tsx
 import React from 'react';
 import { List, ListItem, ListItemText, Paper } from '@mui/material';
 import { Message } from '../types';
