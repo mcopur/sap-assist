@@ -1,8 +1,8 @@
 // sap-assist-frontend/src/store/chatSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { Message } from '../types';
 import { sendMessageToNLP } from '../services/api';
 import { RootState } from './index';
+import { Message } from '../types';
 
 interface ChatState {
   messages: Message[];
@@ -20,9 +20,11 @@ const initialState: ChatState = {
 
 export const sendMessage = createAsyncThunk(
   'chat/sendMessage',
-  async (message: string, { getState, rejectWithValue }) => {
+  async (message: string, { dispatch, getState }) => {
     try {
       const state = getState() as RootState;
+      dispatch(chatSlice.actions.addMessage({ text: message, isUser: true }));
+      
       const context = state.chat.context;
       const response = await sendMessageToNLP(message, context);
       
@@ -38,16 +40,8 @@ export const sendMessage = createAsyncThunk(
       };
     } catch (error) {
       console.error('Error in sendMessage:', error);
-      return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');
+      return { reply: "Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.", newContext: {} };
     }
-  }
-);
-
-export const resetChat = createAsyncThunk(
-  'chat/resetChat',
-  async (_, { dispatch }) => {
-    dispatch(chatSlice.actions.clearMessages());
-    dispatch(chatSlice.actions.updateContext({}));
   }
 );
 
@@ -55,6 +49,9 @@ export const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
+    addMessage: (state, action: PayloadAction<Message>) => {
+      state.messages.push(action.payload);
+    },
     clearMessages: (state) => {
       state.messages = [];
       state.error = null;
@@ -71,23 +68,16 @@ export const chatSlice = createSlice({
       })
       .addCase(sendMessage.fulfilled, (state, action) => {
         state.status = 'idle';
-        state.messages.push({ text: action.meta.arg, isUser: true });
         state.messages.push({ text: action.payload.reply, isUser: false });
         state.context = action.payload.newContext;
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload as string;
-        state.messages.push({ text: "Sorry, I couldn't process your request. Please try again.", isUser: false });
-      })
-      .addCase(resetChat.fulfilled, (state) => {
-        state.messages = [];
-        state.status = 'idle';
-        state.error = null;
-        state.context = {};
+        state.error = action.error.message || 'An unknown error occurred';
+        state.messages.push({ text: "Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.", isUser: false });
       });
   },
 });
 
-export const { clearMessages, updateContext } = chatSlice.actions;
+export const { addMessage, clearMessages, updateContext } = chatSlice.actions;
 export default chatSlice.reducer;

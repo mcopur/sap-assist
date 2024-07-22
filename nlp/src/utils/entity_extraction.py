@@ -1,4 +1,3 @@
-# nlp/src/utils/entity_extraction.py
 import spacy
 import re
 from datetime import datetime
@@ -29,13 +28,13 @@ def extract_entities(text):
 def extract_dates(text):
     date_pattern = r'\d{1,2}[./]\d{1,2}[./]\d{2,4}'
     dates = re.findall(date_pattern, text)
-    return [datetime.strptime(date, '%d/%m/%Y').date() for date in dates]
+    return dates  # datetime nesnesine dönüştürme işlemini kaldırdık
 
 
 def extract_time(text):
     time_pattern = r'\d{1,2}:\d{2}'
     times = re.findall(time_pattern, text)
-    return [datetime.strptime(time, '%H:%M').time() for time in times]
+    return times  # datetime nesnesine dönüştürme işlemini kaldırdık
 
 
 def extract_leave_request_info(text):

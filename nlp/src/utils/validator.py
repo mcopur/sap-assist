@@ -1,8 +1,16 @@
-# nlp/src/utils/validator.py
 from datetime import datetime, timedelta
 
 
 def validate_date(date):
+    if date is None:
+        return False, "Tarih belirtilmemiş."
+
+    if not isinstance(date, datetime):
+        try:
+            date = datetime.strptime(date, "%Y-%m-%d").date()
+        except ValueError:
+            return False, "Geçersiz tarih formatı. Lütfen YYYY-MM-DD formatında bir tarih girin."
+
     if date < datetime.now().date():
         return False, "Geçmiş tarihler için izin talebi oluşturamazsınız."
     if date > datetime.now().date() + timedelta(days=365):
@@ -11,11 +19,15 @@ def validate_date(date):
 
 
 def validate_time(time):
+    if time is None:
+        return True, None  # Zaman belirtilmemişse geçerli kabul ediyoruz
     # Burada gerekirse saat doğrulaması yapabilirsiniz
     return True, None
 
 
 def validate_duration(duration_minutes):
+    if duration_minutes is None:
+        return True, None  # Süre belirtilmemişse geçerli kabul ediyoruz
     if duration_minutes <= 0:
         return False, "Süre sıfırdan büyük olmalıdır."
     if duration_minutes > 480:  # 8 saat
@@ -37,23 +49,18 @@ def validate_leave_request(start_date, end_date, start_time, end_time, duration)
             return False, "Bitiş tarihi başlangıç tarihinden önce olamaz."
 
     # Saat kontrolü
-    if start_time:
-        is_valid, message = validate_time(start_time)
-        if not is_valid:
-            return False, message
+    is_valid, message = validate_time(start_time)
+    if not is_valid:
+        return False, message
 
-    if end_time:
-        is_valid, message = validate_time(end_time)
-        if not is_valid:
-            return False, message
-        if start_time and end_time <= start_time:
-            return False, "Bitiş saati başlangıç saatinden sonra olmalıdır."
+    is_valid, message = validate_time(end_time)
+    if not is_valid:
+        return False, message
 
     # Süre kontrolü
-    if duration:
-        is_valid, message = validate_duration(duration)
-        if not is_valid:
-            return False, message
+    is_valid, message = validate_duration(duration)
+    if not is_valid:
+        return False, message
 
     # Tarih aralığı kontrolü
     if start_date and end_date:

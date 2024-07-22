@@ -50,31 +50,27 @@ func (api *APIv1) ClassifyIntentHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	intent, confidence, msg, err := api.service.NLPService.ClassifyIntent(userInput.Text)
+	intentResponse, err := api.service.NLPService.ClassifyIntent(userInput.Text)
 	if err != nil {
 		log.Printf("Error classifying intent: %v", err)
 		utils.RespondWithError(w, http.StatusInternalServerError, "Error classifying intent")
 		return
 	}
 
-	log.Printf("Classified intent: %s, Confidence: %f, Message: %s", intent, confidence, msg)
-
-	response := models.IntentResponse{
-		Intent:     intent,
-		Confidence: confidence,
-		Response:   msg,
-	}
-
-	if intent == "confirm_annual_leave" || intent == "confirm_excuse_leave" {
-		leaveRequest, err := api.service.SendLeaveRequest("00000029", userInput.StartDate, userInput.EndDate)
-		if err != nil {
-			utils.RespondWithError(w, http.StatusInternalServerError, "Error sending leave request")
-			return
+	if intentResponse.Intent == "confirm_annual_leave" || intentResponse.Intent == "confirm_excuse_leave" {
+		dates := intentResponse.Entities["DATE"]
+		if len(dates) >= 2 {
+			leaveRequest, err := api.service.SendLeaveRequest("00000029", dates[0], dates[1])
+			if err != nil {
+				log.Printf("Error sending leave request: %v", err)
+				utils.RespondWithError(w, http.StatusInternalServerError, "Error sending leave request")
+				return
+			}
+			intentResponse.Response = fmt.Sprintf("İzin Talebi Başarılı: %v", leaveRequest)
 		}
-		response.Response = fmt.Sprintf("Leave Request Successful: %v", leaveRequest)
 	}
 
-	utils.RespondWithJSON(w, http.StatusOK, response)
+	utils.RespondWithJSON(w, http.StatusOK, intentResponse)
 }
 
 // @Summary Create a new user

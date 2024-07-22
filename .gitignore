@@ -223,3 +223,16 @@ nlp/src/models/*
 nlp/tr_core_news_md-0.0.0-py3-none-any.whl
 nlp/src/utils/intent_classifier_model/*
 nlp/src/utils/logs/*
+label_encoder.pkl
+logs/
+nlp/__init__.py
+nlp/data/augmented_intent_data.json
+nlp/logs/
+nlp/src/api/__init__.py
+nlp/src/utils/data_augmentation.py
+nlp/src/utils/data_preprocessing.py
+nlp/src/utils/evaluate_model.py
+nlp/src/utils/hyperparameter_tuning.py
+requirements.txt
+results/
+tr_core_news_md-0.0.0-py3-none-any.whl

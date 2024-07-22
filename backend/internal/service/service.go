@@ -26,6 +26,7 @@ func NewService(repo *repository.PostgresRepository, nlpService *NLPService) *Se
 }
 
 func (s *Service) SendLeaveRequest(personnelNumber, startDate, endDate string) (interface{}, error) {
+
 	url := "https://10.1.4.21:44300/sap/opu/odata/sap/ZCXP_LEAVE_REQUEST_SRV/LEAVE_REQUESTSet"
 	payload := map[string]interface{}{
 		"d": map[string]interface{}{

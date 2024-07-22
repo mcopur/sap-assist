@@ -1,105 +1,89 @@
-# nlp/src/utils/train_intent_classifier.py
-import json
-import os
+from nlp.src.utils.data_preprocessing import preprocess_text, balance_dataset
 import pickle
+import os
+import sys
 import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments
+from transformers import RobertaTokenizer, RobertaForSequenceClassification, Trainer, TrainingArguments
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+import pandas as pd
+import numpy as np
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
-from collections import Counter
-import random
 
-# Force CPU usage
+# Projenin kök dizinini Python yoluna ekle
+project_root = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), '..', '..', '..'))
+sys.path.insert(0, project_root)
+
+
+# CPU kullanımını zorla
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 device = torch.device("cpu")
+print(f"Using device: {device}")
 
-# Basit veri artırma fonksiyonu
+# Veri yükleme
+data_path = os.path.join(project_root, 'nlp', 'data',
+                         'augmented_intent_data.json')
+data = pd.read_json(data_path)
 
+# Veri ön işleme
+data['text'] = data['text'].apply(preprocess_text)
+data = balance_dataset(data.to_dict('records'))
+data = pd.DataFrame(data)
 
-def augment_text(text, n=1):
-    words = text.split()
-    new_texts = [text]
-    for _ in range(n):
-        new_words = words.copy()
-        for i in range(len(new_words)):
-            if random.random() < 0.2:  # %20 olasılıkla bir kelimeyi değiştir
-                new_words[i] = random.choice(words)  # Rastgele bir kelime seç
-        new_texts.append(" ".join(new_words))
-    return new_texts
-
-
-# Get the current script's directory
-current_dir = os.path.dirname(os.path.abspath(__file__))
-
-# Construct the correct path to the data file
-data_file_path = os.path.join(
-    current_dir, '..', '..', 'data', 'intent_data.json')
-
-# Load the dataset
-with open(data_file_path, 'r', encoding='utf-8') as f:
-    data = json.load(f)
-
-texts = [item['text'] for item in data]
-intents = [item['intent'] for item in data]
-
-print(f"Total samples: {len(texts)}")
-print(f"Unique intents: {set(intents)}")
-print(f"Intent distribution: {dict(Counter(intents))}")
-
-# Veri artırma
-augmented_texts = []
-augmented_intents = []
-for text, intent in zip(texts, intents):
-    augmented = augment_text(text, n=2)  # Her örnek için 2 yeni örnek oluştur
-    augmented_texts.extend(augmented)
-    augmented_intents.extend([intent] * len(augmented))
-
-texts = augmented_texts
-intents = augmented_intents
-
-print(f"Total samples after augmentation: {len(texts)}")
-print(f"Intent distribution after augmentation: {dict(Counter(intents))}")
-
-# Encode labels
+# Etiket kodlama
 le = LabelEncoder()
-labels = le.fit_transform(intents)
+data['label'] = le.fit_transform(data['intent'])
 
-# Split the dataset
+# Veri bölme
 train_texts, val_texts, train_labels, val_labels = train_test_split(
-    texts, labels, test_size=0.2, random_state=42)
+    data['text'], data['label'], test_size=0.2, stratify=data['label'], random_state=42)
 
-# Load tokenizer and model
-model_name = "distilbert-base-multilingual-cased"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSequenceClassification.from_pretrained(
-    model_name, num_labels=len(le.classes_)).to(device)
+# Tokenizer ve model yükleme
+tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
+model = RobertaForSequenceClassification.from_pretrained(
+    'roberta-base', num_labels=len(le.classes_))
+model.to(device)
 
-# Tokenize data
-train_encodings = tokenizer(train_texts, truncation=True, padding=True)
-val_encodings = tokenizer(val_texts, truncation=True, padding=True)
-
-# Create torch datasets
+# Veri seti oluşturma
 
 
 class IntentDataset(torch.utils.data.Dataset):
-    def __init__(self, encodings, labels):
-        self.encodings = encodings
+    def __init__(self, texts, labels, tokenizer, max_length=128):
+        self.texts = texts
         self.labels = labels
-
-    def __getitem__(self, idx):
-        item = {key: torch.tensor(val[idx])
-                for key, val in self.encodings.items()}
-        item['labels'] = torch.tensor(self.labels[idx])
-        return item
+        self.tokenizer = tokenizer
+        self.max_length = max_length
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.texts)
+
+    def __getitem__(self, idx):
+        text = str(self.texts.iloc[idx])
+        label = self.labels.iloc[idx]
+
+        encoding = self.tokenizer.encode_plus(
+            text,
+            add_special_tokens=True,
+            max_length=self.max_length,
+            return_token_type_ids=False,
+            padding='max_length',
+            truncation=True,
+            return_attention_mask=True,
+            return_tensors='pt',
+        )
+
+        return {
+            'input_ids': encoding['input_ids'].flatten(),
+            'attention_mask': encoding['attention_mask'].flatten(),
+            'labels': torch.tensor(label, dtype=torch.long)
+        }
 
 
-train_dataset = IntentDataset(train_encodings, train_labels)
-val_dataset = IntentDataset(val_encodings, val_labels)
+train_dataset = IntentDataset(train_texts, train_labels, tokenizer)
+val_dataset = IntentDataset(val_texts, val_labels, tokenizer)
 
-# Define metrics
+# Metrik hesaplama fonksiyonu
 
 
 def compute_metrics(pred):
@@ -116,12 +100,12 @@ def compute_metrics(pred):
     }
 
 
-# Define training arguments
+# Eğitim argümanları
 training_args = TrainingArguments(
     output_dir='./results',
-    num_train_epochs=10,
-    per_device_train_batch_size=8,
-    per_device_eval_batch_size=32,
+    num_train_epochs=20,
+    per_device_train_batch_size=16,
+    per_device_eval_batch_size=64,
     warmup_steps=500,
     weight_decay=0.01,
     logging_dir='./logs',
@@ -129,34 +113,32 @@ training_args = TrainingArguments(
     evaluation_strategy="epoch",
     save_strategy="epoch",
     load_best_model_at_end=True,
-    metric_for_best_model="accuracy",
+    metric_for_best_model="f1",
+    learning_rate=5e-5,
     no_cuda=True,
 )
 
-# Create Trainer instance
+# Trainer oluşturma ve eğitim
 trainer = Trainer(
     model=model,
     args=training_args,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
-    compute_metrics=compute_metrics
+    compute_metrics=compute_metrics,
 )
 
-print("Starting training...")
 trainer.train()
-print("Training completed.")
 
-# Evaluate model
-print("Evaluating model...")
-eval_results = trainer.evaluate()
-print(f"Evaluation results: {eval_results}")
+# Model kaydetme
+model_save_path = os.path.join(
+    project_root, 'nlp', 'models', 'intent_classifier_model')
+model.save_pretrained(model_save_path)
+tokenizer.save_pretrained(model_save_path)
 
-# Save the model
-model.save_pretrained("./intent_classifier_model")
-tokenizer.save_pretrained("./intent_classifier_model")
-
-# Save the label encoder
-with open('label_encoder.pkl', 'wb') as f:
+# Label encoder kaydetme
+le_save_path = os.path.join(project_root, 'nlp', 'models', 'label_encoder.pkl')
+with open(le_save_path, 'wb') as f:
     pickle.dump(le, f)
 
-print("Model training completed and saved.")
+print(f"Improved model saved to {model_save_path}")
+print(f"Label encoder saved to {le_save_path}")

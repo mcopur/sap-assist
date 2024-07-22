@@ -81,24 +81,20 @@ def train_intent_model(texts, labels, tokenizer, device, num_labels):
     return model
 
 
-def classify_intent(text, model, tokenizer, label_dict, device):
-    model.eval()
-    encoding = tokenizer.encode_plus(
-        text,
-        add_special_tokens=True,
-        max_length=128,
-        return_token_type_ids=False,
-        padding='max_length',
-        truncation=True,
-        return_attention_mask=True,
-        return_tensors='pt',
-    )
+def classify_intent(text):
+    entities = extract_entities(text)
+    normalized_text = ' '.join([normalize_entity(e, v)
+                               for e, v in entities.items()])
 
-    input_ids = encoding['input_ids'].to(device)
-    attention_mask = encoding['attention_mask'].to(device)
+    inputs = tokenizer(normalized_text, return_tensors="pt",
+                       truncation=True, padding=True)
 
     with torch.no_grad():
-        outputs = model(input_ids, attention_mask=attention_mask)
-        _, prediction = torch.max(outputs.logits, dim=1)
+        outputs = model(**inputs)
 
-    return prediction.item()  # Sayısal intent değerini döndür
+    logits = outputs.logits
+    probabilities = torch.nn.functional.softmax(logits, dim=-1)
+    confidence, predicted_class = torch.max(probabilities, dim=-1)
+    intent = le.inverse_transform([predicted_class.item()])[0]
+
+    return intent, confidence.item(), entities
