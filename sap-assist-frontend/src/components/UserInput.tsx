@@ -1,6 +1,5 @@
-// sap-assist-frontend/src/components/UserInput.tsx
 import React, { useState } from 'react';
-import { Box, TextField, IconButton } from '@mui/material';
+import { TextField, IconButton, InputAdornment } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 
 interface UserInputProps {
@@ -10,6 +9,7 @@ interface UserInputProps {
 
 const UserInput: React.FC<UserInputProps> = ({ onSendMessage, disabled = false }) => {
   const [message, setMessage] = useState('');
+  const maxLength = 500;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,23 +20,29 @@ const UserInput: React.FC<UserInputProps> = ({ onSendMessage, disabled = false }
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ p: 2, backgroundColor: 'background.default' }}>
+    <form onSubmit={handleSubmit}>
       <TextField
         fullWidth
+        multiline
+        maxRows={4}
         variant="outlined"
         placeholder="Type your message here..."
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         disabled={disabled}
+        inputProps={{ maxLength }}
+        helperText={`${message.length}/${maxLength}`}
         InputProps={{
           endAdornment: (
-            <IconButton type="submit" color="primary" disabled={disabled}>
-              <SendIcon />
-            </IconButton>
+            <InputAdornment position="end">
+              <IconButton type="submit" disabled={disabled || message.length === 0}>
+                <SendIcon />
+              </IconButton>
+            </InputAdornment>
           ),
         }}
       />
-    </Box>
+    </form>
   );
 };
 

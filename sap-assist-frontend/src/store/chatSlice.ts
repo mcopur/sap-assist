@@ -1,4 +1,5 @@
-// sap-assist-frontend/src/store/chatSlice.ts
+// src/store/chatSlice.ts
+
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { sendMessageToNLP } from '../services/api';
 import { RootState } from './index';
@@ -40,7 +41,10 @@ export const sendMessage = createAsyncThunk(
       };
     } catch (error) {
       console.error('Error in sendMessage:', error);
-      return { reply: "Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.", newContext: {} };
+      return { 
+        reply: "Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.", 
+        newContext: {} 
+      };
     }
   }
 );
@@ -58,6 +62,12 @@ export const chatSlice = createSlice({
     },
     updateContext: (state, action: PayloadAction<Record<string, any>>) => {
       state.context = { ...state.context, ...action.payload };
+    },
+    resetChat: (state) => {
+      state.messages = [];
+      state.error = null;
+      state.context = {};
+      state.status = 'idle';
     },
   },
   extraReducers: (builder) => {
@@ -79,5 +89,5 @@ export const chatSlice = createSlice({
   },
 });
 
-export const { addMessage, clearMessages, updateContext } = chatSlice.actions;
+export const { addMessage, clearMessages, updateContext, resetChat } = chatSlice.actions;
 export default chatSlice.reducer;

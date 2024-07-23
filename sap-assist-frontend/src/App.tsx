@@ -1,8 +1,9 @@
-// sap-assist-frontend/src/App.tsx
+// src/App.tsx
+
 import React from 'react';
-import { ThemeProvider, CssBaseline, Box } from '@mui/material';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import { Provider } from 'react-redux';
-import theme from './styles/theme';
+import theme from './theme';
 import { store } from './store';
 import Header from './components/Header';
 import ChatInterface from './components/ChatInterface';
@@ -14,10 +15,8 @@ const App: React.FC = () => {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <ErrorBoundary>
-          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-            <Header />
-            <ChatInterface />
-          </Box>
+          <Header />
+          <ChatInterface />
         </ErrorBoundary>
       </ThemeProvider>
     </Provider>

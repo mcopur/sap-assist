@@ -1,19 +1,33 @@
+
+# nlp/src/utils/validator.py
 from datetime import datetime, timedelta
+
+
+def parse_date(date):
+    if isinstance(date, str):
+        try:
+            return datetime.strptime(date, "%d.%m.%Y").date()
+        except ValueError:
+            try:
+                return datetime.strptime(date, "%Y-%m-%d").date()
+            except ValueError:
+                return None
+    elif isinstance(date, datetime):
+        return date.date()
+    return None
 
 
 def validate_date(date):
     if date is None:
         return False, "Tarih belirtilmemiş."
 
-    if not isinstance(date, datetime):
-        try:
-            date = datetime.strptime(date, "%Y-%m-%d").date()
-        except ValueError:
-            return False, "Geçersiz tarih formatı. Lütfen YYYY-MM-DD formatında bir tarih girin."
+    parsed_date = parse_date(date)
+    if parsed_date is None:
+        return False, "Geçersiz tarih formatı. Lütfen GG.AA.YYYY veya YYYY-MM-DD formatında bir tarih girin."
 
-    if date < datetime.now().date():
+    if parsed_date < datetime.now().date():
         return False, "Geçmiş tarihler için izin talebi oluşturamazsınız."
-    if date > datetime.now().date() + timedelta(days=365):
+    if parsed_date > datetime.now().date() + timedelta(days=365):
         return False, "En fazla bir yıl ilerisine kadar izin talebi oluşturabilirsiniz."
     return True, None
 
@@ -41,11 +55,14 @@ def validate_leave_request(start_date, end_date, start_time, end_time, duration)
     if not is_valid:
         return False, message
 
-    if end_date:
+    parsed_start_date = parse_date(start_date)
+    parsed_end_date = parse_date(end_date) if end_date else parsed_start_date
+
+    if parsed_end_date:
         is_valid, message = validate_date(end_date)
         if not is_valid:
             return False, message
-        if end_date < start_date:
+        if parsed_end_date < parsed_start_date:
             return False, "Bitiş tarihi başlangıç tarihinden önce olamaz."
 
     # Saat kontrolü
@@ -63,8 +80,8 @@ def validate_leave_request(start_date, end_date, start_time, end_time, duration)
         return False, message
 
     # Tarih aralığı kontrolü
-    if start_date and end_date:
-        date_diff = (end_date - start_date).days
+    if parsed_start_date and parsed_end_date:
+        date_diff = (parsed_end_date - parsed_start_date).days
         if date_diff > 30:
             return False, "En fazla 30 günlük izin talep edebilirsiniz."
 

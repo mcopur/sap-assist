@@ -3,7 +3,10 @@ package service
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/mcopur/sap-assist/internal/models"
@@ -26,37 +29,73 @@ func NewService(repo *repository.PostgresRepository, nlpService *NLPService) *Se
 }
 
 func (s *Service) SendLeaveRequest(personnelNumber, startDate, endDate string) (interface{}, error) {
+	url := fmt.Sprintf("https://10.1.4.21:44300/sap/opu/odata/sap/ZCXP_LEAVE_REQUEST_SRV/LEAVE_REQUESTSet('0AA94D873C191EDAA6B96F42599EEB77')")
+	method := "PUT"
 
-	url := "https://10.1.4.21:44300/sap/opu/odata/sap/ZCXP_LEAVE_REQUEST_SRV/LEAVE_REQUESTSet"
 	payload := map[string]interface{}{
 		"d": map[string]interface{}{
-			"PersonnelNumber": personnelNumber,
-			"StartDate":       startDate,
-			"EndDate":         endDate,
-			"RequestId":       "0AA94D873C191EDAA6B96F42599EEB77",
+			"__metadata": map[string]string{
+				"id":   "http://sid-hdb-s4h.dummy.nodomain:50000/sap/opu/odata/sap/ZCXP_LEAVE_REQUEST_SRV/LEAVE_REQUESTSet('0AA94D873C191EDAA6B96F42599EEB77')",
+				"uri":  "http://sid-hdb-s4h.dummy.nodomain:50000/sap/opu/odata/sap/ZCXP_LEAVE_REQUEST_SRV/LEAVE_REQUESTSet('0AA94D873C191EDAA6B96F42599EEB77')",
+				"type": "ZCXP_LEAVE_REQUEST_SRV.LEAVE_REQUEST",
+			},
+			"PersonnelNumber":       personnelNumber,
+			"RequestId":             "0AA94D873C191EDAA6B96F42599EEB77",
+			"Status":                "",
+			"StatusText":            "",
+			"EndDate":               endDate,
+			"StartDate":             startDate,
+			"RequestOrAttabs":       "",
+			"AttabsHours":           "0.00",
+			"AttendanceAbsenceDays": "0.00",
+			"CalendarDays":          "1.00",
+			"PayrollDays":           "0.00",
+			"PayrollHours":          "0.00",
+			"SubtypeDescription":    "",
+			"Deduction":             "",
+			"DeductionTooltip":      "",
 		},
 	}
+
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error marshaling JSON: %w", err)
 	}
 
-	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonPayload))
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-CSRF-TOKEN", "FETCH")
 
-	resp, err := s.httpClient.Do(req)
+	// SAP örneğinden alınan header'ları ekliyoruz
+	req.Header.Add("X-CSRF-TOKEN", "kOfFW0W7bQwTjqx5sDnwyw==")
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", "Basic c2RlbWlydGFnOkNvZGV4MjAyNCo=")
+	req.Header.Add("Cookie", "MYSAPSSO2=AjQxMDMBABhTAEQARQBNAEkAUgBUAEEARwAgACAAIAACAAYxADAAMAADABBTADQASAAgACAAIAAgACAABAAYMgAwADIANAAwADcAMgAyADEAOAAyADQABQAEAAAACAYAAlgACQACRQD%2fAPswgfgGCSqGSIb3DQEHAqCB6jCB5wIBATELMAkGBSsOAwIaBQAwCwYJKoZIhvcNAQcBMYHHMIHEAgEBMBowDjEMMAoGA1UEAxMDUzRIAggKICEFGAlUATAJBgUrDgMCGgUAoF0wGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjQwNzIyMTgyNDU0WjAjBgkqhkiG9w0BCQQxFgQUFht%210ms9RLYlCg7UNq%21Qb3EgC%21MwCQYHKoZIzjgEAwQuMCwCFFzs26j9tlv3BWi7MBkXiGwZpLfVAhReFJ64YxPfXQgMTJFJzfLEBTx6EA%3d%3d; SAP_SESSIONID_S4H_100=5aD9VYQ3Ni58T249W4Ur4jyMgVZIXxHvrJ_FbZiUVsU%3d; sap-usercontext=sap-client=100")
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+
+	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 	defer resp.Body.Close()
 
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+	}
+
 	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("error unmarshaling response: %w", err)
 	}
 
 	return result, nil

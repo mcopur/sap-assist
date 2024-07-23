@@ -44,33 +44,33 @@ func (api *APIv1) RegisterRoutes(r *mux.Router) {
 }
 
 func (api *APIv1) ClassifyIntentHandler(w http.ResponseWriter, r *http.Request) {
-	var userInput models.UserInput
-	if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
-		return
-	}
+    var userInput models.UserInput
+    if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
+        utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+        return
+    }
 
-	intentResponse, err := api.service.NLPService.ClassifyIntent(userInput.Text)
-	if err != nil {
-		log.Printf("Error classifying intent: %v", err)
-		utils.RespondWithError(w, http.StatusInternalServerError, "Error classifying intent")
-		return
-	}
+    intentResponse, err := api.service.NLPService.ClassifyIntent(userInput.Text)
+    if err != nil {
+        log.Printf("Error classifying intent: %v", err)
+        utils.RespondWithError(w, http.StatusInternalServerError, "Error classifying intent")
+        return
+    }
 
-	if intentResponse.Intent == "confirm_annual_leave" || intentResponse.Intent == "confirm_excuse_leave" {
-		dates := intentResponse.Entities["DATE"]
-		if len(dates) >= 2 {
-			leaveRequest, err := api.service.SendLeaveRequest("00000029", dates[0], dates[1])
-			if err != nil {
-				log.Printf("Error sending leave request: %v", err)
-				utils.RespondWithError(w, http.StatusInternalServerError, "Error sending leave request")
-				return
-			}
-			intentResponse.Response = fmt.Sprintf("İzin Talebi Başarılı: %v", leaveRequest)
-		}
-	}
+    if intentResponse.Intent == "confirm_annual_leave" || intentResponse.Intent == "confirm_excuse_leave" {
+        dates := intentResponse.Entities["DATE"]
+        if len(dates) >= 2 {
+            leaveRequest, err := api.service.SendLeaveRequest("00000029", dates[0], dates[1])
+            if err != nil {
+                log.Printf("Error sending leave request: %v", err)
+                intentResponse.Response = fmt.Sprintf("İzin talebi oluşturulurken bir hata oluştu: %v", err)
+            } else {
+                intentResponse.Response = fmt.Sprintf("İzin Talebi Başarılı: %v", leaveRequest)
+            }
+        }
+    }
 
-	utils.RespondWithJSON(w, http.StatusOK, intentResponse)
+    utils.RespondWithJSON(w, http.StatusOK, intentResponse)
 }
 
 // @Summary Create a new user
