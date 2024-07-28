@@ -23,6 +23,9 @@ func NewAPIv1(service *service.Service) *APIv1 {
 }
 
 func (api *APIv1) RegisterRoutes(r *mux.Router) {
+
+	r.HandleFunc("/login", api.loginHandler).Methods("POST")
+
 	r.HandleFunc("/users", api.createUserHandler).Methods("POST")
 	r.HandleFunc("/users/{id}", api.getUserHandler).Methods("GET")
 	r.HandleFunc("/users/{id}", api.updateUserHandler).Methods("PUT")
@@ -71,6 +74,26 @@ func (api *APIv1) ClassifyIntentHandler(w http.ResponseWriter, r *http.Request) 
     }
 
     utils.RespondWithJSON(w, http.StatusOK, intentResponse)
+}
+
+func (api *APIv1) loginHandler(w http.ResponseWriter, r *http.Request) {
+    var loginRequest struct {
+        PersonnelNumber string `json:"personnel_number"`
+        Password        string `json:"password"`
+    }
+
+    if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
+        utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+        return
+    }
+
+    token, err := api.service.Login(loginRequest.PersonnelNumber, loginRequest.Password)
+    if err != nil {
+        utils.RespondWithError(w, http.StatusUnauthorized, "Invalid credentials")
+        return
+    }
+
+    utils.RespondWithJSON(w, http.StatusOK, map[string]string{"token": token})
 }
 
 // @Summary Create a new user

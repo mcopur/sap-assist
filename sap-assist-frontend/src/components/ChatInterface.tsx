@@ -1,8 +1,6 @@
 // src/components/ChatInterface.tsx
-
 import React, { useRef, useEffect } from 'react';
-import { Box, Paper, CircularProgress, Button, useTheme } from '@mui/material';
-import { styled } from '@mui/system';
+import { Box, Paper, CircularProgress, Button } from '@mui/material';
 import MessageList from './MessageList';
 import UserInput from './UserInput';
 import SuggestionChips from './SuggestionChips';
@@ -10,16 +8,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
 import { sendMessage, resetChat } from '../store/chatSlice';
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  height: 'calc(100vh - 64px)',
-  display: 'flex',
-  flexDirection: 'column',
-  background: theme.palette.background.default,
-  borderRadius: 0,
-}));
-
 const ChatInterface: React.FC = () => {
-  const theme = useTheme();
   const dispatch = useDispatch<AppDispatch>();
   const { messages, status } = useSelector((state: RootState) => state.chat);
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
@@ -46,12 +35,18 @@ const ChatInterface: React.FC = () => {
   ];
 
   const handleSuggestionClick = (suggestion: string) => {
-    dispatch(sendMessage(suggestion));
+    handleSendMessage(suggestion);
   };
 
   return (
-    <StyledPaper elevation={0}>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100%', 
+      width: '100%', 
+      overflow: 'hidden'
+    }}>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
         <MessageList messages={messages} />
         {status === 'loading' && (
           <Box display="flex" justifyContent="center" mt={2}>
@@ -60,14 +55,14 @@ const ChatInterface: React.FC = () => {
         )}
         <div ref={messagesEndRef} />
       </Box>
-      <Box sx={{ p: 3, backgroundColor: 'background.paper', borderTop: `1px solid ${theme.palette.divider}` }}>
+      <Box sx={{ p: 2, backgroundColor: 'background.default' }}>
         <SuggestionChips suggestions={suggestions} onSuggestionClick={handleSuggestionClick} />
         <Button variant="outlined" onClick={handleResetChat} sx={{ mb: 2 }}>
           Reset Chat
         </Button>
         <UserInput onSendMessage={handleSendMessage} disabled={status === 'loading'} />
       </Box>
-    </StyledPaper>
+    </Box>
   );
 };
 
