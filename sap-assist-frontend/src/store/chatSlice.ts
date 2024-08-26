@@ -1,15 +1,23 @@
 // src/store/chatSlice.ts
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { sendMessageToNLP } from '../services/api';
 import { RootState } from './index';
 
+interface Message {
+  text: string;
+  isUser: boolean;
+  intent?: string;
+  timestamp: number;
+}
+
 interface ChatState {
-  messages: Array<{ text: string; isUser: boolean }>;
+  messages: Message[];
   status: 'idle' | 'loading' | 'failed';
   error: string | null;
   context: {
     start_date?: string;
     end_date?: string;
+    [key: string]: string | undefined;
   };
 }
 
@@ -29,7 +37,11 @@ export const sendMessage = createAsyncThunk(
       throw new Error('No authentication token available');
     }
     const context = state.chat.context;
-    dispatch(chatSlice.actions.addMessage({ text: message, isUser: true }));
+    dispatch(chatSlice.actions.addMessage({ 
+      text: message, 
+      isUser: true, 
+      timestamp: Date.now() 
+    }));
     const response = await sendMessageToNLP(message, context, token);
     return response;
   }
@@ -39,7 +51,7 @@ export const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
-    addMessage: (state, action) => {
+    addMessage: (state, action: PayloadAction<Message>) => {
       state.messages.push(action.payload);
     },
     resetChat: (state) => {
@@ -47,7 +59,7 @@ export const chatSlice = createSlice({
       state.error = null;
       state.context = {};
     },
-    updateContext: (state, action) => {
+    updateContext: (state, action: PayloadAction<Record<string, string>>) => {
       state.context = { ...state.context, ...action.payload };
     },
   },
@@ -55,15 +67,27 @@ export const chatSlice = createSlice({
     builder
       .addCase(sendMessage.pending, (state) => {
         state.status = 'loading';
+        state.error = null;
       })
       .addCase(sendMessage.fulfilled, (state, action) => {
         state.status = 'idle';
-        state.messages.push({ text: action.payload.response, isUser: false });
+        state.messages.push({ 
+          text: action.payload.response, 
+          isUser: false, 
+          intent: action.payload.intent,
+          timestamp: Date.now()
+        });
         state.context = { ...state.context, ...action.payload.context };
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || 'Failed to send message';
+        state.messages.push({ 
+          text: "Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.", 
+          isUser: false, 
+          intent: "error",
+          timestamp: Date.now()
+        });
       });
   },
 });

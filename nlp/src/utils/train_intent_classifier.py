@@ -103,7 +103,7 @@ def compute_metrics(pred):
 # Eğitim argümanları
 training_args = TrainingArguments(
     output_dir='./results',
-    num_train_epochs=20,
+    num_train_epochs=10,  # Epoch sayısını artırın
     per_device_train_batch_size=16,
     per_device_eval_batch_size=64,
     warmup_steps=500,
@@ -114,7 +114,6 @@ training_args = TrainingArguments(
     save_strategy="epoch",
     load_best_model_at_end=True,
     metric_for_best_model="f1",
-    learning_rate=5e-5,
     no_cuda=True,
 )
 

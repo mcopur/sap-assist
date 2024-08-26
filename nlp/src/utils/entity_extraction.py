@@ -1,6 +1,7 @@
 # nlp/src/utils/entity_extraction.py
 import spacy
 import re
+import dateparser
 from datetime import datetime
 
 nlp = spacy.load("tr_core_news_md")  # Türkçe model
@@ -27,9 +28,27 @@ def extract_entities(text):
 
 
 def extract_dates(text):
-    date_pattern = r'\d{1,2}[./]\d{1,2}[./]\d{2,4}'
-    dates = re.findall(date_pattern, text)
-    return dates  # datetime nesnesine dönüştürme işlemini kaldırdık
+    # Türkçe ay isimleri
+    tr_months = r"(ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık)"
+
+    # Tarih formatları için regex
+    date_patterns = [
+        r'\d{1,2}\s+' + tr_months + r'\s+\d{4}',  # 11 Ağustos 2024
+        r'\d{1,2}[./-]\d{1,2}[./-]\d{4}',  # 11.08.2024 veya 11/08/2024
+        r'\d{4}[./-]\d{1,2}[./-]\d{1,2}'   # 2024.08.11 veya 2024/08/11
+    ]
+
+    dates = []
+    for pattern in date_patterns:
+        matches = re.findall(pattern, text, re.IGNORECASE)
+        for match in matches:
+            if isinstance(match, tuple):  # Ay isimli formatlar için
+                match = " ".join(match)
+            date = parse(match, languages=['tr'])
+            if date:
+                dates.append(date.strftime('%d.%m.%Y'))
+
+    return list(set(dates))  # Tekrar eden tarihleri kaldır
 
 
 def extract_time(text):

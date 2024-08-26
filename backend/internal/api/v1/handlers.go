@@ -3,7 +3,6 @@ package v1
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -60,19 +59,17 @@ func (api *APIv1) ClassifyIntentHandler(w http.ResponseWriter, r *http.Request) 
         return
     }
 
-    if intentResponse.Intent == "confirm_annual_leave" || intentResponse.Intent == "confirm_excuse_leave" {
-        dates := intentResponse.Entities["DATE"]
-        if len(dates) >= 2 {
-            leaveRequest, err := api.service.SendLeaveRequest("00000029", dates[0], dates[1])
-            if err != nil {
-                log.Printf("Error sending leave request: %v", err)
-                intentResponse.Response = fmt.Sprintf("İzin talebi oluşturulurken bir hata oluştu: %v", err)
-            } else {
-                intentResponse.Response = fmt.Sprintf("İzin Talebi Başarılı: %v", leaveRequest)
-            }
-        }
+    var response string
+    switch intentResponse.Intent {
+    case "leave_request_annual":
+        response = "Yıllık izin talebinizi aldım. Lütfen izin tarihlerini belirtin."
+    case "leave_request_excuse":
+        response = "Mazeret izni talebinizi aldım. Lütfen izin tarih ve saatlerini belirtin."
+    default:
+        response = "Üzgünüm, talebinizi anlayamadım. Lütfen yıllık izin veya mazeret izni talebinizi daha açık bir şekilde belirtir misiniz?"
     }
 
+    intentResponse.Response = response
     utils.RespondWithJSON(w, http.StatusOK, intentResponse)
 }
 
@@ -87,6 +84,15 @@ func (api *APIv1) loginHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    // Gerçek login işlemi yerine geçici bir token üret
+    // Gerçek ortamda bu kod kaldırılmalıdır.
+    if loginRequest.PersonnelNumber == "test" && loginRequest.Password == "test" {
+        token := "temporary_test_token"
+        utils.RespondWithJSON(w, http.StatusOK, map[string]string{"token": token})
+        return
+    }
+
+    // Gerçek login işlemi
     token, err := api.service.Login(loginRequest.PersonnelNumber, loginRequest.Password)
     if err != nil {
         utils.RespondWithError(w, http.StatusUnauthorized, "Invalid credentials")

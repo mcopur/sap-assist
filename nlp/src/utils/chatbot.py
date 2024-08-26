@@ -57,11 +57,7 @@ def classify_intent(text):
     probabilities = torch.nn.functional.softmax(logits, dim=-1)
     confidence, predicted_class = torch.max(probabilities, dim=-1)
 
-    # Düşük güven skorları için eşik değeri
-    if confidence.item() < 0.5:
-        intent = "unknown"
-    else:
-        intent = le.inverse_transform([predicted_class.item()])[0]
+    intent = le.inverse_transform([predicted_class.item()])[0]
 
     logger.debug(
         f"Classified intent: {intent}, confidence: {confidence.item()}")
@@ -70,22 +66,37 @@ def classify_intent(text):
 
 def chatbot_response(intent, confidence, entities):
     if intent == "greeting":
-        return "Merhaba! Size nasıl yardımcı olabilirim?"
-    elif intent == "leave_request_annual":
-        return "Yıllık izin talebiniz için tarihleri alabilir miyim? Örneğin: 01.08.2024 ve 05.08.2024 arası"
-    elif intent == "leave_request_excuse":
-        return "Mazeret izni talebiniz için tarih ve saatleri alabilir miyim? Örneğin: 05.08.2024 tarihi 09:30-11:30 arası"
-    elif intent == "confirm_annual_leave":
-        dates = entities.get("DATE", [])
-        return f"Yıllık izin talebinizi {' ve '.join(dates)} tarihleri için aldım. Bu tarihleri kaydediyorum. Onay için yöneticinize ileteceğim. Başka bir isteğiniz var mı?"
-    elif intent == "confirm_excuse_leave":
-        dates = entities.get("DATE", [])
-        times = entities.get("TIME", [])
-        return f"Mazeret izni talebinizi {dates[0]} tarihi {' - '.join(times)} saatleri için aldım. Bu bilgileri kaydediyorum. Onay için yöneticinize ileteceğim. Başka bir isteğiniz var mı?"
-    elif intent == "unknown":
-        return "Üzgünüm, ne demek istediğinizi tam olarak anlayamadım. Lütfen başka bir şekilde ifade eder misiniz?"
+        return "Merhaba! Size nasıl yardımcı olabilirim? Yıllık izin talebi, mazeret izni veya satın alma talebi gibi konularda size yardımcı olabilirim."
+
+    elif intent in ["leave_request_annual", "confirm_annual_leave"]:
+        if entities.get("DATE"):
+            dates = ", ".join(entities["DATE"])
+            return f"Yıllık izin talebinizi {dates} tarihleri için aldım. Bu tarihleri kaydediyorum. Onay için yöneticinize ileteceğim. Başka bir isteğiniz var mı?"
+        else:
+            return "Yıllık izin talebiniz için tarihleri alabilir miyim? Lütfen GG.AA.YYYY formatında veya '11 Ağustos 2024' gibi açık bir şekilde belirtin. Örneğin: 01.08.2024 ve 05.08.2024 arası"
+
+    elif intent in ["leave_request_excuse", "confirm_excuse_leave"]:
+        if entities.get("DATE") and entities.get("TIME"):
+            date = entities["DATE"][0]
+            time = " - ".join(entities["TIME"])
+            return f"Mazeret izni talebinizi {date} tarihi {time} saatleri için aldım. Bu bilgileri kaydediyorum. Onay için yöneticinize ileteceğim. Başka bir isteğiniz var mı?"
+        elif entities.get("DATE"):
+            date = entities["DATE"][0]
+            return f"Mazeret izni talebiniz için {date} tarihini aldım. Lütfen saat aralığını da belirtir misiniz? Örneğin: 09:30-11:30"
+        else:
+            return "Mazeret izni talebiniz için tarih ve saatleri alabilir miyim? Örneğin: 05.08.2024 tarihi 09:30-11:30 arası"
+
+    elif intent == "purchase_request":
+        return "Satın alma talebi oluşturmak için lütfen ürün adı, miktarı ve varsa açıklama gibi detayları belirtin. Örneğin: '5 adet A4 kağıdı sipariş etmek istiyorum'"
+
+    elif intent == "end_conversation":
+        return "Teşekkür ederim, size yardımcı olabildiysem ne mutlu. Başka bir sorunuz olursa yine buradayım. İyi günler!"
+
     else:
-        return "Üzgünüm, bu konuda size yardımcı olamıyorum. Başka bir konuda yardımcı olabilir miyim?"
+        if confidence < 0.5:
+            return "Üzgünüm, talebinizi tam olarak anlayamadım. Lütfen yıllık izin, mazeret izni veya satın alma talebi gibi konulardaki isteğinizi daha açık bir şekilde belirtir misiniz?"
+        else:
+            return "Anladım, ancak bu konuda size nasıl yardımcı olabileceğimden emin değilim. Lütfen daha fazla detay verebilir misiniz?"
 
 
 def process_message(text):

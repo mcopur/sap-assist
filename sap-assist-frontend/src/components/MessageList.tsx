@@ -34,12 +34,19 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
         <ListItem key={index} sx={{ display: 'flex', justifyContent: message.isUser ? 'flex-end' : 'flex-start' }}>
           <MessageBubble isUser={message.isUser}>
             {message.isUser ? <Person sx={{ mr: 1 }} /> : <Android sx={{ mr: 1 }} />}
-            <ListItemText 
+            <ListItemText
               primary={message.text}
               secondary={
-                <Typography variant="caption">
-                  {new Date(message.timestamp || Date.now()).toLocaleTimeString()}
-                </Typography>
+                <>
+                  <Typography variant="caption" display="block">
+                    {new Date(message.timestamp || Date.now()).toLocaleTimeString()}
+                  </Typography>
+                  {message.intent && (
+                    <Typography variant="caption" display="block" color="textSecondary">
+                      Intent: {message.intent}
+                    </Typography>
+                  )}
+                </>
               }
             />
           </MessageBubble>
