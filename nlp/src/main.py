@@ -10,7 +10,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Veri yükleme
-    texts, labels, label_dict = load_training_data('data/intent_data.json')
+    texts, labels, label_dict = load_training_data('data/augmented_intent_data.json')
 
     # Tokenizer yükleme
     tokenizer = AutoTokenizer.from_pretrained(

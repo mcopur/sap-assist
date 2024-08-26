@@ -226,7 +226,6 @@ nlp/src/utils/logs/*
 label_encoder.pkl
 logs/
 nlp/__init__.py
-nlp/data/augmented_intent_data.json
 nlp/logs/
 nlp/src/api/__init__.py
 nlp/src/utils/data_augmentation.py
