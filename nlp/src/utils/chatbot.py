@@ -57,7 +57,11 @@ def classify_intent(text):
     probabilities = torch.nn.functional.softmax(logits, dim=-1)
     confidence, predicted_class = torch.max(probabilities, dim=-1)
 
-    intent = le.inverse_transform([predicted_class.item()])[0]
+    # Increase the confidence threshold
+    if confidence.item() < 0.6:
+        intent = "unknown"
+    else:
+        intent = le.inverse_transform([predicted_class.item()])[0]
 
     logger.debug(
         f"Classified intent: {intent}, confidence: {confidence.item()}")
@@ -67,36 +71,16 @@ def classify_intent(text):
 def chatbot_response(intent, confidence, entities):
     if intent == "greeting":
         return "Merhaba! Size nasıl yardımcı olabilirim? Yıllık izin talebi, mazeret izni veya satın alma talebi gibi konularda size yardımcı olabilirim."
-
     elif intent in ["leave_request_annual", "confirm_annual_leave"]:
-        if entities.get("DATE"):
-            dates = ", ".join(entities["DATE"])
-            return f"Yıllık izin talebinizi {dates} tarihleri için aldım. Bu tarihleri kaydediyorum. Onay için yöneticinize ileteceğim. Başka bir isteğiniz var mı?"
-        else:
-            return "Yıllık izin talebiniz için tarihleri alabilir miyim? Lütfen GG.AA.YYYY formatında veya '11 Ağustos 2024' gibi açık bir şekilde belirtin. Örneğin: 01.08.2024 ve 05.08.2024 arası"
-
+        return "Yıllık izin talebiniz için tarihleri alabilir miyim? Örneğin: 01.08.2024 ve 05.08.2024 arası"
     elif intent in ["leave_request_excuse", "confirm_excuse_leave"]:
-        if entities.get("DATE") and entities.get("TIME"):
-            date = entities["DATE"][0]
-            time = " - ".join(entities["TIME"])
-            return f"Mazeret izni talebinizi {date} tarihi {time} saatleri için aldım. Bu bilgileri kaydediyorum. Onay için yöneticinize ileteceğim. Başka bir isteğiniz var mı?"
-        elif entities.get("DATE"):
-            date = entities["DATE"][0]
-            return f"Mazeret izni talebiniz için {date} tarihini aldım. Lütfen saat aralığını da belirtir misiniz? Örneğin: 09:30-11:30"
-        else:
-            return "Mazeret izni talebiniz için tarih ve saatleri alabilir miyim? Örneğin: 05.08.2024 tarihi 09:30-11:30 arası"
-
+        return "Mazeret izni talebiniz için tarih ve saatleri alabilir miyim? Örneğin: 05.08.2024 tarihi 09:30-11:30 arası"
     elif intent == "purchase_request":
-        return "Satın alma talebi oluşturmak için lütfen ürün adı, miktarı ve varsa açıklama gibi detayları belirtin. Örneğin: '5 adet A4 kağıdı sipariş etmek istiyorum'"
-
-    elif intent == "end_conversation":
-        return "Teşekkür ederim, size yardımcı olabildiysem ne mutlu. Başka bir sorunuz olursa yine buradayım. İyi günler!"
-
+        return "Satın alma talebiniz için detayları alabilir miyim? Örneğin: 10 adet A4 kağıt"
+    elif intent == "unknown":
+        return "Üzgünüm, ne demek istediğinizi tam olarak anlayamadım. Lütfen başka bir şekilde ifade eder misiniz?"
     else:
-        if confidence < 0.5:
-            return "Üzgünüm, talebinizi tam olarak anlayamadım. Lütfen yıllık izin, mazeret izni veya satın alma talebi gibi konulardaki isteğinizi daha açık bir şekilde belirtir misiniz?"
-        else:
-            return "Anladım, ancak bu konuda size nasıl yardımcı olabileceğimden emin değilim. Lütfen daha fazla detay verebilir misiniz?"
+        return "Üzgünüm, bu konuda size yardımcı olamıyorum. Başka bir konuda yardımcı olabilir miyim?"
 
 
 def process_message(text):
@@ -105,7 +89,7 @@ def process_message(text):
     logger.debug(
         f"Intent: {intent}, Confidence: {confidence}, Entities: {entities}")
 
-    if intent in ["confirm_annual_leave", "confirm_excuse_leave"]:
+    if intent in ["confirm_annual_leave", "confirm_excuse_leave", "leave_request_annual", "leave_request_excuse"]:
         dates = entities.get("DATE", [])
         times = entities.get("TIME", [])
         start_date = dates[0] if dates else None
@@ -125,11 +109,4 @@ def process_message(text):
     response = chatbot_response(intent, confidence, entities)
     logger.debug(f"Chatbot response: {response}")
 
-    # Ensure all return values are properly formatted
-    return (
-        str(intent),
-        float(confidence),
-        str(response),
-        {k: [str(v) for v in vs] if isinstance(vs, list) else str(vs)
-         for k, vs in entities.items()}
-    )
+    return str(intent), float(confidence), str(response), {k: [str(v) for v in vs] if isinstance(vs, list) else str(vs) for k, vs in entities.items()}

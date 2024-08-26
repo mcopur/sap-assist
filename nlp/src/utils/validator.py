@@ -1,8 +1,7 @@
 
 # nlp/src/utils/validator.py
 from datetime import datetime, timedelta
-import holidays
-import dateparser
+from dateutil.parser import parse
 
 
 def parse_date(date):
@@ -20,28 +19,21 @@ def parse_date(date):
 
 
 def validate_date(date_str):
-    parsed_date = parse(date_str, languages=['tr'])
-    
-    if not parsed_date:
-        return False, "Geçersiz tarih formatı. Lütfen geçerli bir tarih girin."
-    
+    if date_str is None:
+        return False, "Tarih belirtilmemiş."
+
+    try:
+        parsed_date = parse(date_str, dayfirst=True).date()
+    except ValueError:
+        return False, "Geçersiz tarih formatı. Lütfen GG.AA.YYYY formatında bir tarih girin."
+
     today = datetime.now().date()
-    
-    if parsed_date.date() < today:
+    if parsed_date < today:
         return False, "Geçmiş tarihler için izin talebi oluşturamazsınız."
-    
-    max_future_date = today + timedelta(days=365)
-    if parsed_date.date() > max_future_date:
+    if parsed_date > today + timedelta(days=365):
         return False, "En fazla bir yıl ilerisine kadar izin talebi oluşturabilirsiniz."
-    
-    if parsed_date.weekday() >= 5:
-        return False, "Hafta sonları için izin talebi oluşturamazsınız."
-    
-    tr_holidays = holidays.Turkey(years=parsed_date.year)
-    if parsed_date.date() in tr_holidays:
-        return False, f"{parsed_date.date()} tarihinde resmi tatil olduğu için izin talebi oluşturamazsınız."
-    
-    return True, parsed_date.strftime("%d.%m.%Y")
+    return True, None
+
 
 def validate_time(time):
     if time is None:
