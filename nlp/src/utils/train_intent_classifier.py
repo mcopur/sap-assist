@@ -1,89 +1,61 @@
-from nlp.src.utils.data_preprocessing import preprocess_text, balance_dataset
 import pickle
 import os
-import sys
 import torch
-from transformers import RobertaTokenizer, RobertaForSequenceClassification, Trainer, TrainingArguments
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-import pandas as pd
-import numpy as np
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+import pandas as pd
+import json
+import numpy as np
 
-# Projenin kök dizinini Python yoluna ekle
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
+device = torch.device('cpu')
+
 project_root = os.path.abspath(os.path.join(
     os.path.dirname(__file__), '..', '..', '..'))
-sys.path.insert(0, project_root)
-
-
-# CPU kullanımını zorla
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
-device = torch.device("cpu")
-print(f"Using device: {device}")
-
-# Veri yükleme
 data_path = os.path.join(project_root, 'nlp', 'data',
-                         'augmented_intent_data.json')
-data = pd.read_json(data_path)
+                         'enriched_intent_data.json')
 
-# Veri ön işleme
-data['text'] = data['text'].apply(preprocess_text)
-data = balance_dataset(data.to_dict('records'))
-data = pd.DataFrame(data)
+with open(data_path, 'r', encoding='utf-8') as f:
+    data = json.load(f)
 
-# Etiket kodlama
+df = pd.DataFrame(data)
+
+# Print class distribution
+print("Class distribution:")
+print(df['intent'].value_counts(normalize=True))
+
 le = LabelEncoder()
-data['label'] = le.fit_transform(data['intent'])
+df['label'] = le.fit_transform(df['intent'])
 
-# Veri bölme
 train_texts, val_texts, train_labels, val_labels = train_test_split(
-    data['text'], data['label'], test_size=0.2, stratify=data['label'], random_state=42)
+    df['text'], df['label'], test_size=0.2, stratify=df['label'], random_state=42)
 
-# Tokenizer ve model yükleme
-tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
-model = RobertaForSequenceClassification.from_pretrained(
-    'roberta-base', num_labels=len(le.classes_))
-model.to(device)
-
-# Veri seti oluşturma
+model_name = "dbmdz/bert-base-turkish-cased"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSequenceClassification.from_pretrained(
+    model_name, num_labels=len(le.classes_)).to(device)
 
 
 class IntentDataset(torch.utils.data.Dataset):
-    def __init__(self, texts, labels, tokenizer, max_length=128):
+    def __init__(self, texts, labels):
         self.texts = texts
         self.labels = labels
-        self.tokenizer = tokenizer
-        self.max_length = max_length
-
-    def __len__(self):
-        return len(self.texts)
 
     def __getitem__(self, idx):
-        text = str(self.texts.iloc[idx])
-        label = self.labels.iloc[idx]
+        item = tokenizer(self.texts.iloc[idx], truncation=True,
+                         padding='max_length', max_length=128, return_tensors="pt")
+        item = {key: val.squeeze() for key, val in item.items()}
+        item['labels'] = torch.tensor(self.labels.iloc[idx])
+        return item
 
-        encoding = self.tokenizer.encode_plus(
-            text,
-            add_special_tokens=True,
-            max_length=self.max_length,
-            return_token_type_ids=False,
-            padding='max_length',
-            truncation=True,
-            return_attention_mask=True,
-            return_tensors='pt',
-        )
-
-        return {
-            'input_ids': encoding['input_ids'].flatten(),
-            'attention_mask': encoding['attention_mask'].flatten(),
-            'labels': torch.tensor(label, dtype=torch.long)
-        }
+    def __len__(self):
+        return len(self.labels)
 
 
-train_dataset = IntentDataset(train_texts, train_labels, tokenizer)
-val_dataset = IntentDataset(val_texts, val_labels, tokenizer)
-
-# Metrik hesaplama fonksiyonu
+train_dataset = IntentDataset(train_texts, train_labels)
+val_dataset = IntentDataset(val_texts, val_labels)
 
 
 def compute_metrics(pred):
@@ -100,24 +72,23 @@ def compute_metrics(pred):
     }
 
 
-# Eğitim argümanları
 training_args = TrainingArguments(
-    output_dir='./results',
-    num_train_epochs=10,  # Epoch sayısını artırın
+    output_dir=os.path.join(project_root, "nlp", "models", "results"),
+    num_train_epochs=40,  # Eğitim süresini artırdık
     per_device_train_batch_size=16,
     per_device_eval_batch_size=64,
     warmup_steps=500,
     weight_decay=0.01,
-    logging_dir='./logs',
+    logging_dir=os.path.join(project_root, "nlp", "models", "logs"),
     logging_steps=10,
     evaluation_strategy="epoch",
     save_strategy="epoch",
     load_best_model_at_end=True,
     metric_for_best_model="f1",
     no_cuda=True,
+    learning_rate=3e-5,  # Öğrenme oranını artırdık
 )
 
-# Trainer oluşturma ve eğitim
 trainer = Trainer(
     model=model,
     args=training_args,
@@ -128,16 +99,34 @@ trainer = Trainer(
 
 trainer.train()
 
-# Model kaydetme
 model_save_path = os.path.join(
-    project_root, 'nlp', 'models', 'intent_classifier_model')
+    project_root, "nlp", "models", "improved_intent_classifier_model")
 model.save_pretrained(model_save_path)
 tokenizer.save_pretrained(model_save_path)
 
-# Label encoder kaydetme
-le_save_path = os.path.join(project_root, 'nlp', 'models', 'label_encoder.pkl')
+le_save_path = os.path.join(project_root, "nlp", "models", "label_encoder.pkl")
 with open(le_save_path, 'wb') as f:
     pickle.dump(le, f)
 
-print(f"Improved model saved to {model_save_path}")
+print(f"Model saved to {model_save_path}")
 print(f"Label encoder saved to {le_save_path}")
+
+eval_results = trainer.evaluate()
+print("Evaluation results:", eval_results)
+
+test_texts = ["Merhaba", "Yıllık izin almak istiyorum",
+              "Satın alma talebi oluşturmak istiyorum"]
+for text in test_texts:
+    inputs = tokenizer(text, return_tensors="pt",
+                       truncation=True, padding=True)
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+    with torch.no_grad():
+        outputs = model(**inputs)
+    probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)
+    predicted_class = torch.argmax(probabilities, dim=-1).item()
+    predicted_intent = le.inverse_transform([predicted_class])[0]
+    confidence = probabilities[0][predicted_class].item()
+    print(f"Text: {text}")
+    print(f"Predicted Intent: {predicted_intent}")
+    print(f"Confidence: {confidence:.4f}")
+    print("---")
