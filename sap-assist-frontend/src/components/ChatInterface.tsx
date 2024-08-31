@@ -1,15 +1,16 @@
-import React, { useRef, useEffect } from 'react';
-import { Box, CircularProgress, Button } from '@mui/material';
-import MessageList from './MessageList';
-import UserInput from './UserInput';
-import SuggestionChips from './SuggestionChips';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '../store';
-import { sendMessage, resetChat } from '../store/chatSlice';
+import React, { useState, useEffect, useRef } from 'react';
+import { Box, TextField, Button, Paper, Typography } from '@mui/material';
+import { processMessage } from '../services/api';
+
+interface Message {
+  text: string;
+  isUser: boolean;
+}
 
 const ChatInterface: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { messages, status } = useSelector((state: RootState) => state.chat);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [context, setContext] = useState({});
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -18,64 +19,46 @@ const ChatInterface: React.FC = () => {
 
   useEffect(scrollToBottom, [messages]);
 
-  useEffect(() => {
-    console.log("Current messages state:", messages);
-  }, [messages]);
+  const handleSendMessage = async () => {
+    if (input.trim() === '') return;
 
-  const handleSendMessage = async (message: string) => {
-    console.log("Sending message:", message);
+    setMessages(prevMessages => [...prevMessages, { text: input, isUser: true }]);
+    setInput('');
+
     try {
-      const resultAction = await dispatch(sendMessage(message));
-      if (sendMessage.fulfilled.match(resultAction)) {
-        console.log("Message sent successfully. Response:", resultAction.payload);
-      } else if (sendMessage.rejected.match(resultAction)) {
-        console.error("Failed to send message:", resultAction.error);
-      }
+      const response = await processMessage(input, context);
+      setMessages(prevMessages => [...prevMessages, { text: response.response, isUser: false }]);
+      setContext(response.context);
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error('Error processing message:', error);
+      setMessages(prevMessages => [...prevMessages, { text: 'An error occurred. Please try again.', isUser: false }]);
     }
   };
 
-  const handleResetChat = () => {
-    console.log("Resetting chat");
-    dispatch(resetChat());
-  };
-
-  const suggestions = [
-    "What's my leave balance?",
-    "I want to request a leave",
-    "Show my recent purchase requests",
-    "How do I submit a new purchase request?"
-  ];
-
-  const handleSuggestionClick = (suggestion: string) => {
-    console.log("Suggestion clicked:", suggestion);
-    handleSendMessage(suggestion);
-  };
-
   return (
-    <Box sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      width: '100%',
-      overflow: 'hidden'
-    }}>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
-        <MessageList messages={messages} />
-        {status === 'loading' && (
-          <Box display="flex" justifyContent="center" mt={2}>
-            <CircularProgress />
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Paper elevation={3} sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
+        {messages.map((message, index) => (
+          <Box key={index} sx={{ mb: 2, display: 'flex', justifyContent: message.isUser ? 'flex-end' : 'flex-start' }}>
+            <Paper elevation={1} sx={{ p: 1, maxWidth: '70%', bgcolor: message.isUser ? 'primary.light' : 'secondary.light' }}>
+              <Typography>{message.text}</Typography>
+            </Paper>
           </Box>
-        )}
+        ))}
         <div ref={messagesEndRef} />
-      </Box>
-      <Box sx={{ p: 2, backgroundColor: 'background.default' }}>
-        <SuggestionChips suggestions={suggestions} onSuggestionClick={handleSuggestionClick} />
-        <Button variant="outlined" onClick={handleResetChat} sx={{ mb: 2 }}>
-          Reset Chat
+      </Paper>
+      <Box sx={{ p: 2, bgcolor: 'background.default' }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+          placeholder="Type your message here..."
+        />
+        <Button variant="contained" onClick={handleSendMessage} sx={{ mt: 1 }}>
+          Send
         </Button>
-        <UserInput onSendMessage={handleSendMessage} disabled={status === 'loading'} />
       </Box>
     </Box>
   );

@@ -1,42 +1,31 @@
-# nlp/src/api/server.py
-
 from flask import Flask, request, jsonify
-from nlp.src.utils.chatbot import Chatbot
-import sys
-import os
-
-project_root = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', '..', '..'))
-sys.path.insert(0, project_root)
+from ..utils.chatbot import Chatbot
+import logging
 
 app = Flask(__name__)
-chatbot = Chatbot()
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+intent_model_path = "path/to/your/intent_model"
+response_model_path = "path/to/your/response_model"
+chatbot = Chatbot(intent_model_path, response_model_path)
 
 @app.route('/process', methods=['POST'])
-def process():
-    app.logger.debug(f"Received request: {request.json}")
-    data = request.get_json()
+def process_message():
+    data = request.json
     if not data or 'text' not in data:
-        app.logger.error("Invalid request payload")
         return jsonify({"error": "Invalid request payload"}), 400
 
-    user_input = data['text']
+    text = data['text']
     context = data.get('context', {})
-    try:
-        intent, confidence, response, entities = chatbot.process_message(
-            user_input, context)
 
-        result = {
-            "intent": intent,
-            "confidence": confidence,
-            "response": response,
-            "entities": entities
-        }
-        app.logger.debug(f"Sending response: {result}")
+    try:
+        result = chatbot.process_message(text, context)
+        logger.info(f"Processed message: {result}")
         return jsonify(result)
     except Exception as e:
-        app.logger.error(f"Error processing message: {str(e)}")
+        logger.error(f"Error processing message: {str(e)}")
         return jsonify({"error": "Error processing message"}), 500
 
 

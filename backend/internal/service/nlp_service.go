@@ -1,5 +1,3 @@
-// backend/internal/service/nlp_service.go
-
 package service
 
 import (

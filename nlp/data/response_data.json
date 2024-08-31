@@ -1,0 +1,73 @@
+[
+  {
+    "intent": "greeting",
+    "response": "Merhaba! Size nasıl yardımcı olabilirim?",
+    "context": {}
+  },
+  {
+    "intent": "greeting",
+    "response": "İyi günler! Bugün size hangi konuda destek olabilirim?",
+    "context": {}
+  },
+  {
+    "intent": "greeting",
+    "response": "Hoş geldiniz! Nasıl yardımcı olabilirim?",
+    "context": {}
+  },
+  
+  {
+    "intent": "leave_request_annual",
+    "response": "Tabii, yıllık izin talebinizi almak için size yardımcı olabilirim. Hangi tarihler için izin düşünüyorsunuz?",
+    "context": {"awaiting_dates": true}
+  },
+  {
+    "intent": "leave_request_annual",
+    "response": "Yıllık izin talebinizi değerlendirmek için tarih aralığına ihtiyacım var. Ne zaman izne çıkmayı planlıyorsunuz?",
+    "context": {"awaiting_dates": true}
+  },
+  
+  {
+    "intent": "leave_request_excuse",
+    "response": "Anlıyorum, mazeret izni talebinizi alıyorum. Hangi tarih ve saat aralığı için izin istiyorsunuz?",
+    "context": {"awaiting_date_time": true}
+  },
+  {
+    "intent": "leave_request_excuse",
+    "response": "Mazeret izniniz için size yardımcı olabilirim. Lütfen izin almak istediğiniz tarih ve saati belirtir misiniz?",
+    "context": {"awaiting_date_time": true}
+  },
+  
+  {
+    "intent": "confirm_annual_leave",
+    "response": "Yıllık izin talebinizi aldım. {start_date} ile {end_date} tarihleri arasında izin kullanmak istiyorsunuz. Bu talebi onaylamak için yöneticinize ileteceğim. Başka bir şey eklemek ister misiniz?",
+    "context": {"leave_type": "annual", "start_date": "{start_date}", "end_date": "{end_date}"}
+  },
+  
+  {
+    "intent": "confirm_excuse_leave",
+    "response": "Mazeret izni talebinizi aldım. {date} tarihinde {start_time} - {end_time} saatleri arasında izinli olacaksınız. Bu talebi onaylamak için yöneticinize ileteceğim. Başka bir detay eklemek ister misiniz?",
+    "context": {"leave_type": "excuse", "date": "{date}", "start_time": "{start_time}", "end_time": "{end_time}"}
+  },
+  
+  {
+    "intent": "purchase_request",
+    "response": "Satın alma talebinizi almak için size yardımcı olabilirim. Lütfen almak istediğiniz ürünün adını ve miktarını belirtir misiniz?",
+    "context": {"awaiting_product_details": true}
+  },
+  {
+    "intent": "purchase_request",
+    "response": "Satın alma talebiniz için {product} ürününden {quantity} adet sipariş vermek istiyorsunuz. Bu talebi onay için ilgili departmana ileteceğim. Başka bir ürün eklemek ister misiniz?",
+    "context": {"product": "{product}", "quantity": "{quantity}"}
+  },
+  
+  {
+    "intent": "end_conversation",
+    "response": "Anladım, size başka bir konuda yardımcı olabileceğim bir şey var mı?",
+    "context": {}
+  },
+  {
+    "intent": "end_conversation",
+    "response": "Teşekkür ederim. İyi günler dilerim! Başka bir sorunuz olursa yardımcı olmaktan memnuniyet duyarım.",
+    "context": {}
+  }
+]

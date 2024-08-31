@@ -1746,5 +1746,95 @@
   {
      "text":"Çok yardımcı oldunuz, iyi günler",
      "intent":"end_conversation"
-  }
-]
+  },
+   {
+     "text": "Merhaba, bir konuda yardımınıza ihtiyacım var",
+     "intent": "greeting"
+   },
+   {
+     "text": "İyi çalışmalar, müsait misiniz?",
+     "intent": "greeting"
+   },
+   {
+     "text": "Affedersiniz, bir sorum olacaktı",
+     "intent": "greeting"
+   },
+   
+   {
+     "text": "Önümüzdeki hafta için izin planlamak istiyorum",
+     "intent": "leave_request_annual"
+   },
+   {
+     "text": "Yıllık iznimi ne zaman kullanabilirim?",
+     "intent": "leave_request_annual"
+   },
+   {
+     "text": "İzin politikamız nedir?",
+     "intent": "leave_request_annual"
+   },
+   
+   {
+     "text": "Acil bir durum var, bugün işe gelemeyeceğim",
+     "intent": "leave_request_excuse"
+   },
+   {
+     "text": "Çocuğum hasta, evden çalışabilir miyim?",
+     "intent": "leave_request_excuse"
+   },
+   {
+     "text": "Öğleden sonra bir randevum var, erken çıkabilir miyim?",
+     "intent": "leave_request_excuse"
+   },
+   
+   {
+     "text": "15-30 Haziran arası yıllık izin kullanmak istiyorum",
+     "intent": "confirm_annual_leave"
+   },
+   {
+     "text": "Gelecek ay başından itibaren 2 hafta izne ayrılabilir miyim?",
+     "intent": "confirm_annual_leave"
+   },
+   {
+     "text": "Bayram tatilini yıllık iznimle birleştirmek istiyorum",
+     "intent": "confirm_annual_leave"
+   },
+   
+   {
+     "text": "Yarın öğleden sonra 2 saat kadar dışarıda olacağım",
+     "intent": "confirm_excuse_leave"
+   },
+   {
+     "text": "Pazartesi sabah geç geleceğim, toplantıyı kaçırmam, değil mi?",
+     "intent": "confirm_excuse_leave"
+   },
+   {
+     "text": "Cuma günü 11:00-14:00 arası kişisel bir işim var",
+     "intent": "confirm_excuse_leave"
+   },
+   
+   {
+     "text": "Yeni bir bilgisayar mouse'u sipariş etmem gerekiyor",
+     "intent": "purchase_request"
+   },
+   {
+     "text": "Ofis için kahve makinesi alabilir miyiz?",
+     "intent": "purchase_request"
+   },
+   {
+     "text": "Departmanımız için yeni bir yazıcı siparişi vermek istiyorum",
+     "intent": "purchase_request"
+   },
+   
+   {
+     "text": "Sanırım bu kadar, teşekkür ederim",
+     "intent": "end_conversation"
+   },
+   {
+     "text": "Yardımcı oldunuz, başka sorum yok",
+     "intent": "end_conversation"
+   },
+   {
+     "text": "Tamam, anladım. İyi günler!",
+     "intent": "end_conversation"
+   }
+ ]
