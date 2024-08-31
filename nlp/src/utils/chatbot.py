@@ -1,6 +1,12 @@
-import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, BertForMaskedLM
-from .entity_extraction import extract_entities
+import os
+import sys
+
+# Proje kök dizinini Python yoluna ekle
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+sys.path.insert(0, project_root)
+
+from flask import Flask, request, jsonify
+from nlp.src.utils.chatbot import Chatbot
 import logging
 
 logger = logging.getLogger(__name__)
