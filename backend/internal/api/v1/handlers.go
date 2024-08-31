@@ -44,6 +44,8 @@ func (api *APIv1) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/users/{userId}/purchase-requests", api.getPurchaseRequestsByUserHandler).Methods("GET")
 
 	r.HandleFunc("/classify", api.ClassifyIntentHandler).Methods("POST")
+	r.HandleFunc("/process", api.ProcessMessageHandler).Methods("POST")
+
 }
 
 func (api *APIv1) ClassifyIntentHandler(w http.ResponseWriter, r *http.Request) {
@@ -484,4 +486,21 @@ func (api *APIv1) getPurchaseRequestsByUserHandler(w http.ResponseWriter, r *htt
 		return
 	}
 	utils.RespondWithJSON(w, http.StatusOK, requests)
+}
+
+func (api *APIv1) ProcessMessageHandler(w http.ResponseWriter, r *http.Request) {
+	var userInput models.UserInput
+	if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	intentResponse, err := api.service.NLPService.ProcessMessage(userInput)
+	if err != nil {
+		log.Printf("Error processing message: %v", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Error processing message")
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, intentResponse)
 }

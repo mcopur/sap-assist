@@ -37,8 +37,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
-	
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	db, err := database.InitDB(cfg)
 	if err != nil {
