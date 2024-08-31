@@ -3,6 +3,7 @@ package v1
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -46,28 +47,33 @@ func (api *APIv1) RegisterRoutes(r *mux.Router) {
 }
 
 func (api *APIv1) ClassifyIntentHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Received classify request")
-
 	var userInput models.UserInput
 	if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
-		log.Printf("Error decoding request body: %v", err)
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
-	log.Printf("User input: %+v", userInput)
-
-	intentResponse, err := api.service.NLPService.ClassifyIntent(userInput.Text)
+	intentResponse, err := api.service.NLPService.ProcessMessage(userInput)
 	if err != nil {
-		log.Printf("Error classifying intent: %v", err)
-		utils.RespondWithError(w, http.StatusInternalServerError, "Error classifying intent")
+		log.Printf("Error processing message: %v", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Error processing message")
 		return
 	}
 
-	log.Printf("NLP response: %+v", intentResponse)
+	if intentResponse.Intent == "confirm_annual_leave" || intentResponse.Intent == "confirm_excuse_leave" {
+		dates := intentResponse.Entities["DATE"]
+		if len(dates) >= 2 {
+			leaveRequest, err := api.service.SendLeaveRequest(userInput.PersonnelNumber, dates[0], dates[1])
+			if err != nil {
+				log.Printf("Error sending leave request: %v", err)
+				intentResponse.Response = fmt.Sprintf("İzin talebi oluşturulurken bir hata oluştu: %v", err)
+			} else {
+				intentResponse.Response = fmt.Sprintf("İzin Talebi Başarılı: %v", leaveRequest)
+			}
+		}
+	}
 
 	utils.RespondWithJSON(w, http.StatusOK, intentResponse)
-	log.Printf("Response sent successfully")
 }
 
 func (api *APIv1) loginHandler(w http.ResponseWriter, r *http.Request) {

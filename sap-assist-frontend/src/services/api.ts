@@ -1,7 +1,30 @@
 // src/services/api.ts
+
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8080/api/v1';
+
+export const processMessage = async (message: string, context: any) => {
+  try {
+    console.log('Processing message:', message);
+    const response = await axios.post(`${API_BASE_URL}/process`, { 
+      text: message,
+      context: context
+    }, {
+      withCredentials: true
+    });
+    console.log('NLP response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error processing message:', error);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error('Response data:', error.response.data);
+      console.error('Response status:', error.response.status);
+      throw new Error(error.response.data.message || 'An error occurred while processing your request');
+    }
+    throw new Error('An unknown error occurred');
+  }
+};
 
 // Mock login function
 export const loginUser = async (personnelNumber: string, password: string) => {
@@ -25,84 +48,11 @@ export const loginUser = async (personnelNumber: string, password: string) => {
   }
 };
 
-export const sendMessageToNLP = async (message: string, context: any, token: string) => {
-  try {
-    console.log('Sending message to NLP:', message);
-    console.log('Context:', context);
-    console.log('Using token:', token);
-    const response = await axios.post(`${API_BASE_URL}/classify`, { 
-      text: message,
-      start_date: context.start_date || '',
-      end_date: context.end_date || ''
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      withCredentials: true
-    });
-    console.log('NLP response:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Error sending message to NLP:', error);
-    if (axios.isAxiosError(error) && error.response) {
-      console.error('Response data:', error.response.data);
-      console.error('Response status:', error.response.status);
-      throw new Error(error.response.data.message || 'An error occurred while processing your request');
-    }
-    throw new Error('An unknown error occurred');
-  }
+export const fetchSAPData = async (endpoint: string, params: any): Promise<any> => {
+  // Mevcut SAP veri çekme implementasyonunuz
+  console.log('Fetching SAP data from:', endpoint, 'with params:', params);
+  // API çağrısı yapılacak
+  throw new Error('SAP data fetching not implemented');
 };
 
-export const sendLeaveRequest = async (token: string, startDate: string, endDate: string) => {
-  try {
-    console.log('Sending leave request:', { startDate, endDate });
-    const response = await axios.post(`${API_BASE_URL}/leave-requests`, {
-      start_date: startDate,
-      end_date: endDate
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    console.log('Leave request response:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Error sending leave request:', error);
-    throw new Error('Failed to send leave request');
-  }
-};
-
-export const getPurchaseRequests = async (token: string) => {
-  try {
-    console.log('Fetching purchase requests');
-    const response = await axios.get(`${API_BASE_URL}/purchase-requests`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    console.log('Purchase requests response:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching purchase requests:', error);
-    throw new Error('Failed to fetch purchase requests');
-  }
-};
-
-export const createPurchaseRequest = async (token: string, itemName: string, quantity: number) => {
-  try {
-    console.log('Creating purchase request:', { itemName, quantity });
-    const response = await axios.post(`${API_BASE_URL}/purchase-requests`, {
-      item_name: itemName,
-      quantity: quantity
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    console.log('Create purchase request response:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Error creating purchase request:', error);
-    throw new Error('Failed to create purchase request');
-  }
-};
+export const sendMessageToNLP = processMessage;

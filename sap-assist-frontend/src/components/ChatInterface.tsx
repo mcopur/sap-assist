@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Box, Paper, CircularProgress, Button } from '@mui/material';
+import { Box, CircularProgress, Button } from '@mui/material';
 import MessageList from './MessageList';
 import UserInput from './UserInput';
 import SuggestionChips from './SuggestionChips';

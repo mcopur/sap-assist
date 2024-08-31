@@ -1,5 +1,6 @@
-// sap-assist-frontend/src/services/nlp.ts
-import { sendMessageToNLP } from './api';
+// src/services/nlp.ts
+
+import { processMessage } from './api';
 
 interface NLPResponse {
   reply: string;
@@ -12,12 +13,12 @@ interface NLPResponse {
 
 let conversationContext: Record<string, any> = {};
 
-export const processMessage = async (message: string): Promise<NLPResponse> => {
+export const processMessageNLP = async (message: string): Promise<NLPResponse> => {
   try {
     console.log('Processing message:', message);
     console.log('Current context:', conversationContext);
     
-    const response = await sendMessageToNLP(message, conversationContext);
+    const response = await processMessage(message, conversationContext);
     
     console.log('NLP service response:', response);
     

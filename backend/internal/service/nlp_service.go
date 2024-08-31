@@ -1,12 +1,12 @@
 // backend/internal/service/nlp_service.go
+
 package service
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"log"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/mcopur/sap-assist/internal/models"
@@ -14,32 +14,32 @@ import (
 
 type NLPService struct {
 	baseURL string
+	client  *http.Client
 }
 
 func NewNLPService(baseURL string) *NLPService {
-	return &NLPService{baseURL: baseURL}
+	return &NLPService{
+		baseURL: baseURL,
+		client:  &http.Client{},
+	}
 }
 
-func (n *NLPService) ClassifyIntent(text string) (*models.IntentResponse, error) {
-	requestBody, err := json.Marshal(map[string]string{"text": text})
+func (n *NLPService) ProcessMessage(input models.UserInput) (*models.IntentResponse, error) {
+	requestBody, err := json.Marshal(input)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling request: %v", err)
 	}
 
-	log.Printf("Sending request to NLP service: %s", string(requestBody))
-
-	resp, err := http.Post(n.baseURL+"/classify", "application/json", bytes.NewBuffer(requestBody))
+	resp, err := n.client.Post(n.baseURL+"/process", "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, fmt.Errorf("error sending request to NLP service: %v", err)
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading response body: %v", err)
 	}
-
-	log.Printf("Received response from NLP service: %s", string(body))
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("NLP service returned non-200 status code: %d, body: %s", resp.StatusCode, string(body))

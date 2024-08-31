@@ -235,3 +235,4 @@ nlp/src/utils/hyperparameter_tuning.py
 requirements.txt
 results/
 tr_core_news_md-0.0.0-py3-none-any.whl
+tr_core_news_md-any-py3-none-any.whl

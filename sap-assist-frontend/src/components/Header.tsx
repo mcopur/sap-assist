@@ -1,35 +1,23 @@
 // src/components/Header.tsx
+
 import React from 'react';
-import { AppBar, Toolbar, Typography, Avatar, Box, Button } from '@mui/material';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../store';
+import { AppBar, Toolbar, Typography, Button } from '@mui/material';
+import { useDispatch } from 'react-redux';
 import { logout } from '../store/authSlice';
+import { AppDispatch } from '../store';
 
 const Header: React.FC = () => {
-  const dispatch = useDispatch();
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch<AppDispatch>();
 
   const handleLogout = () => {
     dispatch(logout());
   };
 
   return (
-    <AppBar position="static" sx={{ flexShrink: 0 }}>
+    <AppBar position="static">
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          SAP Assist
-        </Typography>
-        {isAuthenticated && user ? (
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Typography variant="subtitle1" sx={{ mr: 1 }}>
-              {user.name}
-            </Typography>
-            <Avatar>{user.name.charAt(0)}</Avatar>
-            <Button color="inherit" onClick={handleLogout} sx={{ ml: 2 }}>
-              Logout
-            </Button>
-          </Box>
-        ) : null}
+        <Typography variant="h6" style={{ flexGrow: 1 }}>SAP Assist</Typography>
+        <Button color="inherit" onClick={handleLogout}>Logout</Button>
       </Toolbar>
     </AppBar>
   );

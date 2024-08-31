@@ -104,42 +104,42 @@ func (s *Service) SendLeaveRequest(personnelNumber, startDate, endDate string) (
 }
 
 func (s *Service) Login(personnelNumber, password string) (string, error) {
-    url := "https://10.1.4.21:44300/sap/opu/odata/sap/ZCXP_LEAVE_REQUEST_SRV/LEAVE_REQUESTSet"
-    method := "GET"
+	url := "https://10.1.4.21:44300/sap/opu/odata/sap/ZCXP_LEAVE_REQUEST_SRV/LEAVE_REQUESTSet"
+	method := "GET"
 
-    client := &http.Client{
-        Transport: &http.Transport{
-            TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-        },
-    }
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
 
-    req, err := http.NewRequest(method, url, nil)
-    if err != nil {
-        return "", err
-    }
+	req, err := http.NewRequest(method, url, nil)
+	if err != nil {
+		return "", err
+	}
 
-    auth := base64.StdEncoding.EncodeToString([]byte(personnelNumber + ":" + password))
-    req.Header.Add("Authorization", "Basic "+auth)
+	auth := base64.StdEncoding.EncodeToString([]byte(personnelNumber + ":" + password))
+	req.Header.Add("Authorization", "Basic "+auth)
 
-    resp, err := client.Do(req)
-    if err != nil {
-        return "", err
-    }
-    defer resp.Body.Close()
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
 
-    if resp.StatusCode != http.StatusOK {
-        return "", fmt.Errorf("login failed")
-    }
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("login failed")
+	}
 
-    // Extract necessary information from response headers
-    csrfToken := resp.Header.Get("X-CSRF-Token")
-    cookie := resp.Header.Get("Set-Cookie")
+	// Extract necessary information from response headers
+	csrfToken := resp.Header.Get("X-CSRF-Token")
+	cookie := resp.Header.Get("Set-Cookie")
 
-    // Create a token string containing all necessary information
-    token := fmt.Sprintf("%s:%s:%s:%s", personnelNumber, csrfToken, auth, cookie)
-    encodedToken := base64.StdEncoding.EncodeToString([]byte(token))
+	// Create a token string containing all necessary information
+	token := fmt.Sprintf("%s:%s:%s:%s", personnelNumber, csrfToken, auth, cookie)
+	encodedToken := base64.StdEncoding.EncodeToString([]byte(token))
 
-    return encodedToken, nil
+	return encodedToken, nil
 }
 
 // User Service Methods
@@ -286,15 +286,19 @@ func (s *Service) DeletePurchaseRequest(id int) error {
 }
 
 func (s *Service) ExtractTokenInfo(token string) (string, string, string, string, error) {
-    decodedToken, err := base64.StdEncoding.DecodeString(token)
-    if err != nil {
-        return "", "", "", "", err
-    }
+	decodedToken, err := base64.StdEncoding.DecodeString(token)
+	if err != nil {
+		return "", "", "", "", err
+	}
 
-    parts := strings.Split(string(decodedToken), ":")
-    if len(parts) != 4 {
-        return "", "", "", "", fmt.Errorf("invalid token format")
-    }
+	parts := strings.Split(string(decodedToken), ":")
+	if len(parts) != 4 {
+		return "", "", "", "", fmt.Errorf("invalid token format")
+	}
 
-    return parts[0], parts[1], parts[2], parts[3], nil
+	return parts[0], parts[1], parts[2], parts[3], nil
+}
+
+func (s *Service) ProcessMessage(input models.UserInput) (*models.IntentResponse, error) {
+	return s.NLPService.ProcessMessage(input)
 }

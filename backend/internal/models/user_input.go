@@ -2,7 +2,7 @@
 package models
 
 type UserInput struct {
-    Text      string `json:"text"`
-    StartDate string `json:"start_date"`
-    EndDate   string `json:"end_date"`
+	Text            string            `json:"text"`
+	PersonnelNumber string            `json:"personnel_number"`
+	Context         map[string]string `json:"context"`
 }
