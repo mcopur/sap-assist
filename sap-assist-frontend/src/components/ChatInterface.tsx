@@ -1,4 +1,3 @@
-// src/components/ChatInterface.tsx
 import React, { useRef, useEffect } from 'react';
 import { Box, Paper, CircularProgress, Button } from '@mui/material';
 import MessageList from './MessageList';
@@ -19,11 +18,26 @@ const ChatInterface: React.FC = () => {
 
   useEffect(scrollToBottom, [messages]);
 
-  const handleSendMessage = (message: string) => {
-    dispatch(sendMessage(message));
+  useEffect(() => {
+    console.log("Current messages state:", messages);
+  }, [messages]);
+
+  const handleSendMessage = async (message: string) => {
+    console.log("Sending message:", message);
+    try {
+      const resultAction = await dispatch(sendMessage(message));
+      if (sendMessage.fulfilled.match(resultAction)) {
+        console.log("Message sent successfully. Response:", resultAction.payload);
+      } else if (sendMessage.rejected.match(resultAction)) {
+        console.error("Failed to send message:", resultAction.error);
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
   };
 
   const handleResetChat = () => {
+    console.log("Resetting chat");
     dispatch(resetChat());
   };
 
@@ -35,15 +49,16 @@ const ChatInterface: React.FC = () => {
   ];
 
   const handleSuggestionClick = (suggestion: string) => {
+    console.log("Suggestion clicked:", suggestion);
     handleSendMessage(suggestion);
   };
 
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      height: '100%', 
-      width: '100%', 
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      width: '100%',
       overflow: 'hidden'
     }}>
       <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>

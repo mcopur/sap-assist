@@ -46,60 +46,57 @@ func (api *APIv1) RegisterRoutes(r *mux.Router) {
 }
 
 func (api *APIv1) ClassifyIntentHandler(w http.ResponseWriter, r *http.Request) {
-    var userInput models.UserInput
-    if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
-        utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
-        return
-    }
+	log.Printf("Received classify request")
 
-    intentResponse, err := api.service.NLPService.ClassifyIntent(userInput.Text)
-    if err != nil {
-        log.Printf("Error classifying intent: %v", err)
-        utils.RespondWithError(w, http.StatusInternalServerError, "Error classifying intent")
-        return
-    }
+	var userInput models.UserInput
+	if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
+		log.Printf("Error decoding request body: %v", err)
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
 
-    var response string
-    switch intentResponse.Intent {
-    case "leave_request_annual":
-        response = "Yıllık izin talebinizi aldım. Lütfen izin tarihlerini belirtin."
-    case "leave_request_excuse":
-        response = "Mazeret izni talebinizi aldım. Lütfen izin tarih ve saatlerini belirtin."
-    default:
-        response = "Üzgünüm, talebinizi anlayamadım. Lütfen yıllık izin veya mazeret izni talebinizi daha açık bir şekilde belirtir misiniz?"
-    }
+	log.Printf("User input: %+v", userInput)
 
-    intentResponse.Response = response
-    utils.RespondWithJSON(w, http.StatusOK, intentResponse)
+	intentResponse, err := api.service.NLPService.ClassifyIntent(userInput.Text)
+	if err != nil {
+		log.Printf("Error classifying intent: %v", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Error classifying intent")
+		return
+	}
+
+	log.Printf("NLP response: %+v", intentResponse)
+
+	utils.RespondWithJSON(w, http.StatusOK, intentResponse)
+	log.Printf("Response sent successfully")
 }
 
 func (api *APIv1) loginHandler(w http.ResponseWriter, r *http.Request) {
-    var loginRequest struct {
-        PersonnelNumber string `json:"personnel_number"`
-        Password        string `json:"password"`
-    }
+	var loginRequest struct {
+		PersonnelNumber string `json:"personnel_number"`
+		Password        string `json:"password"`
+	}
 
-    if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
-        utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
-        return
-    }
+	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
 
-    // Gerçek login işlemi yerine geçici bir token üret
-    // Gerçek ortamda bu kod kaldırılmalıdır.
-    if loginRequest.PersonnelNumber == "test" && loginRequest.Password == "test" {
-        token := "temporary_test_token"
-        utils.RespondWithJSON(w, http.StatusOK, map[string]string{"token": token})
-        return
-    }
+	// Gerçek login işlemi yerine geçici bir token üret
+	// Gerçek ortamda bu kod kaldırılmalıdır.
+	if loginRequest.PersonnelNumber == "test" && loginRequest.Password == "test" {
+		token := "temporary_test_token"
+		utils.RespondWithJSON(w, http.StatusOK, map[string]string{"token": token})
+		return
+	}
 
-    // Gerçek login işlemi
-    token, err := api.service.Login(loginRequest.PersonnelNumber, loginRequest.Password)
-    if err != nil {
-        utils.RespondWithError(w, http.StatusUnauthorized, "Invalid credentials")
-        return
-    }
+	// Gerçek login işlemi
+	token, err := api.service.Login(loginRequest.PersonnelNumber, loginRequest.Password)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusUnauthorized, "Invalid credentials")
+		return
+	}
 
-    utils.RespondWithJSON(w, http.StatusOK, map[string]string{"token": token})
+	utils.RespondWithJSON(w, http.StatusOK, map[string]string{"token": token})
 }
 
 // @Summary Create a new user

@@ -5,19 +5,22 @@ const API_BASE_URL = 'http://localhost:8080/api/v1';
 
 // Mock login function
 export const loginUser = async (personnelNumber: string, password: string) => {
+  console.log('Attempting login for personnel number:', personnelNumber);
   // Simulate API call delay
   await new Promise(resolve => setTimeout(resolve, 1000));
 
   // Mock login logic
   if (personnelNumber === '12345' && password === 'password') {
+    console.log('Login successful');
     return {
       token: 'mock-jwt-token',
       user: {
         personnelNumber: '12345',
-        name: 'John Doe'
+        name: 'Mehmet Copur'
       }
     };
   } else {
+    console.error('Login failed: Invalid credentials');
     throw new Error('Invalid credentials');
   }
 };
@@ -25,6 +28,8 @@ export const loginUser = async (personnelNumber: string, password: string) => {
 export const sendMessageToNLP = async (message: string, context: any, token: string) => {
   try {
     console.log('Sending message to NLP:', message);
+    console.log('Context:', context);
+    console.log('Using token:', token);
     const response = await axios.post(`${API_BASE_URL}/classify`, { 
       text: message,
       start_date: context.start_date || '',
@@ -50,6 +55,7 @@ export const sendMessageToNLP = async (message: string, context: any, token: str
 
 export const sendLeaveRequest = async (token: string, startDate: string, endDate: string) => {
   try {
+    console.log('Sending leave request:', { startDate, endDate });
     const response = await axios.post(`${API_BASE_URL}/leave-requests`, {
       start_date: startDate,
       end_date: endDate
@@ -58,6 +64,7 @@ export const sendLeaveRequest = async (token: string, startDate: string, endDate
         Authorization: `Bearer ${token}`
       }
     });
+    console.log('Leave request response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error sending leave request:', error);
@@ -67,11 +74,13 @@ export const sendLeaveRequest = async (token: string, startDate: string, endDate
 
 export const getPurchaseRequests = async (token: string) => {
   try {
+    console.log('Fetching purchase requests');
     const response = await axios.get(`${API_BASE_URL}/purchase-requests`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
+    console.log('Purchase requests response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching purchase requests:', error);
@@ -81,6 +90,7 @@ export const getPurchaseRequests = async (token: string) => {
 
 export const createPurchaseRequest = async (token: string, itemName: string, quantity: number) => {
   try {
+    console.log('Creating purchase request:', { itemName, quantity });
     const response = await axios.post(`${API_BASE_URL}/purchase-requests`, {
       item_name: itemName,
       quantity: quantity
@@ -89,6 +99,7 @@ export const createPurchaseRequest = async (token: string, itemName: string, qua
         Authorization: `Bearer ${token}`
       }
     });
+    console.log('Create purchase request response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error creating purchase request:', error);

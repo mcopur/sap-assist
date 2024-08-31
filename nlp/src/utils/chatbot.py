@@ -20,7 +20,6 @@ if os.path.exists(os.path.join(model_path, 'tokenizer_config.json')):
     tokenizer = AutoTokenizer.from_pretrained(
         model_path, local_files_only=True)
 else:
-    # Eğer yerel model yoksa, varsayılan Türkçe BERT modelini kullan
     tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-turkish-cased")
 
 # Model'i yükle
@@ -28,7 +27,6 @@ if os.path.exists(os.path.join(model_path, 'pytorch_model.bin')):
     model = AutoModelForSequenceClassification.from_pretrained(
         model_path, local_files_only=True)
 else:
-    # Eğer yerel model yoksa, varsayılan Türkçe BERT modelini kullan
     model = AutoModelForSequenceClassification.from_pretrained(
         "dbmdz/bert-base-turkish-cased")
 
@@ -45,6 +43,8 @@ else:
     le = LabelEncoder()
     le.classes_ = ['unknown']  # Dummy class
 
+CONFIDENCE_THRESHOLD = 0.7
+
 
 def classify_intent(text):
     logger.debug(f"Classifying intent for: {text}")
@@ -57,8 +57,19 @@ def classify_intent(text):
     probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)
     confidence, predicted_class = torch.max(probabilities, dim=-1)
 
-    intent = le.inverse_transform([predicted_class.item()])[0]
     confidence = confidence.item()
+
+    if confidence < CONFIDENCE_THRESHOLD:
+        logger.debug(
+            f"Low confidence: {confidence}. Returning unknown intent.")
+        return "unknown", confidence
+
+    intent = le.inverse_transform([predicted_class.item()])[0]
+
+    # Basit kural tabanlı düzeltmeler
+    if "yıllık izin" in text.lower():
+        intent = "leave_request_annual"
+        logger.debug(f"Rule-based correction: Changed intent to {intent}")
 
     logger.debug(f"Classified intent: {intent}, confidence: {confidence}")
     return intent, confidence
@@ -91,7 +102,7 @@ def generate_response(intent, entities, leave_info):
         return "Üzgünüm, talebinizi tam olarak anlayamadım. Lütfen daha açık bir şekilde ifade eder misiniz?"
 
 
-def process_message(text):
+def process_message(text, context=None):
     logger.debug(f"Processing message: {text}")
 
     intent, confidence = classify_intent(text)
@@ -102,7 +113,15 @@ def process_message(text):
     logger.debug(f"Entities: {entities}")
     logger.debug(f"Leave info: {leave_info}")
 
-    response = generate_response(intent, entities, leave_info)
+    if intent == "unknown":
+        response = "Üzgünüm, ne demek istediğinizi tam olarak anlayamadım. Lütfen daha açık bir şekilde ifade eder misiniz?"
+    elif context and context.get('last_intent') == "leave_request_annual" and intent == "confirm_annual_leave":
+        # Tarih belirtme olarak kabul et
+        intent = "date_specification"
+        response = "Anladım, bu tarihi yıllık izin talebiniz için kaydediyorum. Başka bir şey eklemek ister misiniz?"
+    else:
+        response = generate_response(intent, entities, leave_info)
+
     logger.debug(f"Generated response: {response}")
 
     return intent, confidence, response, entities
