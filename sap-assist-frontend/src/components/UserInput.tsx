@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { TextField, IconButton, InputAdornment } from '@mui/material';
+import React, { useState, useRef, useEffect } from 'react';
+import { Box, TextField, IconButton } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 
 interface UserInputProps {
@@ -9,7 +9,13 @@ interface UserInputProps {
 
 const UserInput: React.FC<UserInputProps> = ({ onSendMessage, disabled = false }) => {
   const [message, setMessage] = useState('');
-  const maxLength = 500;
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,30 +25,34 @@ const UserInput: React.FC<UserInputProps> = ({ onSendMessage, disabled = false }
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      handleSubmit(e);
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit}>
+    <Box component="form" onSubmit={handleSubmit} sx={{ p: 2, backgroundColor: 'background.default' }}>
       <TextField
         fullWidth
-        multiline
-        maxRows={4}
         variant="outlined"
         placeholder="Type your message here..."
         value={message}
         onChange={(e) => setMessage(e.target.value)}
+        onKeyPress={handleKeyPress}
         disabled={disabled}
-        inputProps={{ maxLength }}
-        helperText={`${message.length}/${maxLength}`}
+        inputRef={inputRef}
+        multiline
+        maxRows={4}
         InputProps={{
           endAdornment: (
-            <InputAdornment position="end">
-              <IconButton type="submit" disabled={disabled || message.length === 0}>
-                <SendIcon />
-              </IconButton>
-            </InputAdornment>
+            <IconButton type="submit" color="primary" disabled={disabled || !message.trim()}>
+              <SendIcon />
+            </IconButton>
           ),
         }}
       />
-    </form>
+    </Box>
   );
 };
 

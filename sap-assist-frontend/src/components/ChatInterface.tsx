@@ -1,17 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Box, TextField, Button, Paper, Typography } from '@mui/material';
-import { processMessage } from '../services/api';
-
-interface Message {
-  text: string;
-  isUser: boolean;
-}
+import React, { useRef, useEffect, useState } from 'react';
+import { Box, Paper, CircularProgress, Button, Snackbar, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import MessageList from './MessageList';
+import UserInput from './UserInput';
+import SuggestionChips from './SuggestionChips';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '../store';
+import { sendMessage, resetChat } from '../store/chatSlice';
 
 const ChatInterface: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [context, setContext] = useState({});
+  const dispatch = useDispatch<AppDispatch>();
+  const { messages, status, error } = useSelector((state: RootState) => state.chat);
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -19,48 +20,77 @@ const ChatInterface: React.FC = () => {
 
   useEffect(scrollToBottom, [messages]);
 
-  const handleSendMessage = async () => {
-    if (input.trim() === '') return;
-
-    setMessages(prevMessages => [...prevMessages, { text: input, isUser: true }]);
-    setInput('');
-
-    try {
-      const response = await processMessage(input, context);
-      setMessages(prevMessages => [...prevMessages, { text: response.response, isUser: false }]);
-      setContext(response.context);
-    } catch (error) {
-      console.error('Error processing message:', error);
-      setMessages(prevMessages => [...prevMessages, { text: 'An error occurred. Please try again.', isUser: false }]);
+  useEffect(() => {
+    if (error) {
+      setOpenSnackbar(true);
     }
+  }, [error]);
+
+  const handleSendMessage = (message: string) => {
+    dispatch(sendMessage(message));
+  };
+
+  const handleResetChat = () => {
+    dispatch(resetChat());
+  };
+
+  const handleCloseSnackbar = (event: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setOpenSnackbar(false);
+  };
+
+  const suggestions = [
+    "What's my leave balance?",
+    "I want to request a leave",
+    "Show my recent purchase requests",
+    "How do I submit a new purchase request?"
+  ];
+
+  const handleSuggestionClick = (suggestion: string) => {
+    dispatch(sendMessage(suggestion));
   };
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Paper elevation={3} sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
-        {messages.map((message, index) => (
-          <Box key={index} sx={{ mb: 2, display: 'flex', justifyContent: message.isUser ? 'flex-end' : 'flex-start' }}>
-            <Paper elevation={1} sx={{ p: 1, maxWidth: '70%', bgcolor: message.isUser ? 'primary.light' : 'secondary.light' }}>
-              <Typography>{message.text}</Typography>
-            </Paper>
+    <Paper elevation={3} sx={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
+        <MessageList messages={messages} />
+        {status === 'loading' && (
+          <Box display="flex" justifyContent="center" mt={2}>
+            <CircularProgress />
           </Box>
-        ))}
+        )}
         <div ref={messagesEndRef} />
-      </Paper>
-      <Box sx={{ p: 2, bgcolor: 'background.default' }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-          placeholder="Type your message here..."
-        />
-        <Button variant="contained" onClick={handleSendMessage} sx={{ mt: 1 }}>
-          Send
-        </Button>
       </Box>
-    </Box>
+      <Box sx={{ p: 2, backgroundColor: 'background.default' }}>
+        <SuggestionChips suggestions={suggestions} onSuggestionClick={handleSuggestionClick} />
+        <Button variant="outlined" onClick={handleResetChat} sx={{ mb: 2 }}>
+          Reset Chat
+        </Button>
+        <UserInput onSendMessage={handleSendMessage} disabled={status === 'loading'} />
+      </Box>
+      <Snackbar
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        message={error || "An error occurred"}
+        action={
+          <IconButton
+            size="small"
+            aria-label="close"
+            color="inherit"
+            onClick={handleCloseSnackbar}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        }
+      />
+    </Paper>
   );
 };
 

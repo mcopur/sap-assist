@@ -1,6 +1,5 @@
-// sap-assist-frontend/src/components/SuggestionChips.tsx
 import React from 'react';
-import { Chip, Box } from '@mui/material';
+import { Chip, Box, Typography } from '@mui/material';
 
 interface SuggestionChipsProps {
   suggestions: string[];
@@ -9,15 +8,25 @@ interface SuggestionChipsProps {
 
 const SuggestionChips: React.FC<SuggestionChipsProps> = ({ suggestions, onSuggestionClick }) => {
   return (
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, my: 2 }}>
-      {suggestions.map((suggestion, index) => (
-        <Chip
-          key={index}
-          label={suggestion}
-          onClick={() => onSuggestionClick(suggestion)}
-          variant="outlined"
-        />
-      ))}
+    <Box sx={{ my: 2 }}>
+      <Typography variant="subtitle2" sx={{ mb: 1 }}>Suggested Actions:</Typography>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+        {suggestions.map((suggestion, index) => (
+          <Chip
+            key={index}
+            label={suggestion}
+            onClick={() => onSuggestionClick(suggestion)}
+            variant="outlined"
+            color="primary"
+            sx={{ 
+              '&:hover': { 
+                backgroundColor: 'primary.light',
+                color: 'primary.contrastText'
+              }
+            }}
+          />
+        ))}
+      </Box>
     </Box>
   );
 };
