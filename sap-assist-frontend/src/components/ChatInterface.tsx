@@ -1,6 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Box, Paper, CircularProgress, Button, Snackbar, IconButton } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import React, { useRef, useEffect } from 'react';
+import { Box, Paper, CircularProgress, Button, useTheme, useMediaQuery } from '@mui/material';
 import MessageList from './MessageList';
 import UserInput from './UserInput';
 import SuggestionChips from './SuggestionChips';
@@ -10,9 +9,10 @@ import { sendMessage, resetChat } from '../store/chatSlice';
 
 const ChatInterface: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { messages, status, error } = useSelector((state: RootState) => state.chat);
+  const { messages, status } = useSelector((state: RootState) => state.chat);
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
-  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -20,25 +20,12 @@ const ChatInterface: React.FC = () => {
 
   useEffect(scrollToBottom, [messages]);
 
-  useEffect(() => {
-    if (error) {
-      setOpenSnackbar(true);
-    }
-  }, [error]);
-
   const handleSendMessage = (message: string) => {
     dispatch(sendMessage(message));
   };
 
   const handleResetChat = () => {
     dispatch(resetChat());
-  };
-
-  const handleCloseSnackbar = (event: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-    setOpenSnackbar(false);
   };
 
   const suggestions = [
@@ -53,44 +40,50 @@ const ChatInterface: React.FC = () => {
   };
 
   return (
-    <Paper elevation={3} sx={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
-        <MessageList messages={messages} />
-        {status === 'loading' && (
-          <Box display="flex" justifyContent="center" mt={2}>
-            <CircularProgress />
+    <Box sx={{ 
+      height: 'calc(100vh - 64px)', 
+      display: 'flex', 
+      flexDirection: 'column',
+      maxWidth: '1200px',
+      margin: '0 auto',
+      width: '100%',
+      padding: theme.spacing(2),
+    }}>
+      <Paper elevation={3} sx={{ 
+        flexGrow: 1, 
+        display: 'flex', 
+        flexDirection: 'column',
+        overflow: 'hidden',
+        borderRadius: theme.shape.borderRadius,
+      }}>
+        <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
+          <MessageList messages={messages} />
+          {status === 'loading' && (
+            <Box display="flex" justifyContent="center" mt={2}>
+              <CircularProgress />
+            </Box>
+          )}
+          <div ref={messagesEndRef} />
+        </Box>
+        <Box sx={{ p: 2, backgroundColor: 'background.default' }}>
+          <SuggestionChips 
+            suggestions={suggestions} 
+            onSuggestionClick={handleSuggestionClick} 
+            isMobile={isMobile}
+          />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Button 
+              variant="outlined" 
+              onClick={handleResetChat}
+              size={isMobile ? "small" : "medium"}
+            >
+              Reset Chat
+            </Button>
           </Box>
-        )}
-        <div ref={messagesEndRef} />
-      </Box>
-      <Box sx={{ p: 2, backgroundColor: 'background.default' }}>
-        <SuggestionChips suggestions={suggestions} onSuggestionClick={handleSuggestionClick} />
-        <Button variant="outlined" onClick={handleResetChat} sx={{ mb: 2 }}>
-          Reset Chat
-        </Button>
-        <UserInput onSendMessage={handleSendMessage} disabled={status === 'loading'} />
-      </Box>
-      <Snackbar
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'center',
-        }}
-        open={openSnackbar}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        message={error || "An error occurred"}
-        action={
-          <IconButton
-            size="small"
-            aria-label="close"
-            color="inherit"
-            onClick={handleCloseSnackbar}
-          >
-            <CloseIcon fontSize="small" />
-          </IconButton>
-        }
-      />
-    </Paper>
+          <UserInput onSendMessage={handleSendMessage} disabled={status === 'loading'} />
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 
