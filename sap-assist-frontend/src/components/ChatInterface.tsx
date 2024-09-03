@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Box, Paper, CircularProgress, Button, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Paper, CircularProgress, Button, useTheme, useMediaQuery, Typography } from '@mui/material';
 import MessageList from './MessageList';
 import UserInput from './UserInput';
 import SuggestionChips from './SuggestionChips';
@@ -47,25 +47,29 @@ const ChatInterface: React.FC = () => {
       maxWidth: '1200px',
       margin: '0 auto',
       width: '100%',
-      padding: theme.spacing(2),
+      padding: theme.spacing(3),
     }}>
-      <Paper elevation={3} sx={{ 
+      <Paper elevation={0} sx={{ 
         flexGrow: 1, 
         display: 'flex', 
         flexDirection: 'column',
         overflow: 'hidden',
         borderRadius: theme.shape.borderRadius,
+        border: `1px solid ${theme.palette.divider}`,
       }}>
+        <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
+          <Typography variant="h6">Chat Assistant</Typography>
+        </Box>
         <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
           <MessageList messages={messages} />
           {status === 'loading' && (
             <Box display="flex" justifyContent="center" mt={2}>
-              <CircularProgress />
+              <CircularProgress size={24} />
             </Box>
           )}
           <div ref={messagesEndRef} />
         </Box>
-        <Box sx={{ p: 2, backgroundColor: 'background.default' }}>
+        <Box sx={{ p: 2, backgroundColor: 'background.default', borderTop: `1px solid ${theme.palette.divider}` }}>
           <SuggestionChips 
             suggestions={suggestions} 
             onSuggestionClick={handleSuggestionClick} 
@@ -76,6 +80,7 @@ const ChatInterface: React.FC = () => {
               variant="outlined" 
               onClick={handleResetChat}
               size={isMobile ? "small" : "medium"}
+              startIcon={<ResetIcon />}
             >
               Reset Chat
             </Button>

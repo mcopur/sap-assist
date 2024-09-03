@@ -37,11 +37,14 @@ const UserInput: React.FC<UserInputProps> = ({ onSendMessage, disabled = false }
     <Box component="form" onSubmit={handleSubmit} sx={{ 
       display: 'flex',
       alignItems: 'center',
-      backgroundColor: 'background.default' 
+      backgroundColor: 'background.paper',
+      borderRadius: theme.shape.borderRadius,
+      border: `1px solid ${theme.palette.divider}`,
+      overflow: 'hidden',
     }}>
       <TextField
         fullWidth
-        variant="outlined"
+        variant="standard"
         placeholder="Type your message here..."
         value={message}
         onChange={(e) => setMessage(e.target.value)}
@@ -50,14 +53,12 @@ const UserInput: React.FC<UserInputProps> = ({ onSendMessage, disabled = false }
         inputRef={inputRef}
         multiline
         maxRows={4}
-        size={isMobile ? "small" : "medium"}
+        InputProps={{
+          disableUnderline: true,
+        }}
         sx={{
-          '& .MuiOutlinedInput-root': {
-            borderRadius: theme.shape.borderRadius,
-            '&.Mui-focused': {
-              boxShadow: `0 0 0 2px ${theme.palette.primary.main}`,
-            },
-          },
+          px: 2,
+          py: 1,
         }}
       />
       <IconButton 
@@ -65,7 +66,7 @@ const UserInput: React.FC<UserInputProps> = ({ onSendMessage, disabled = false }
         color="primary" 
         disabled={disabled || !message.trim()}
         size={isMobile ? "small" : "medium"}
-        sx={{ ml: 1 }}
+        sx={{ mr: 1 }}
       >
         <SendIcon />
       </IconButton>
