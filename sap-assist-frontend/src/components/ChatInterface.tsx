@@ -6,6 +6,7 @@ import SuggestionChips from './SuggestionChips';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
 import { sendMessage, resetChat } from '../store/chatSlice';
+import { RefreshCw as ResetIcon } from 'lucide-react';
 
 const ChatInterface: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
