@@ -10,13 +10,17 @@ import (
 )
 
 type Config struct {
-	DBHost     string
-	DBPort     int
-	DBUser     string
-	DBPassword string
-	DBName     string
-	ServerPort int
-	// Diğer konfigürasyon alanları buraya eklenebilir
+	DBHost          string
+	DBPort          int
+	DBUser          string
+	DBPassword      string
+	DBName          string
+	ServerPort      int
+	NLPServiceURL   string
+	SAPBaseURL      string
+	SAPClientID     string
+	SAPClientSecret string
+	AllowedOrigin   string
 }
 
 func LoadConfig() (*Config, error) {
@@ -26,12 +30,17 @@ func LoadConfig() (*Config, error) {
 	}
 
 	config := &Config{
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBPort:     getEnvAsInt("DB_PORT", 5432),
-		DBUser:     getEnv("DB_USER", ""),
-		DBPassword: getEnv("DB_PASSWORD", ""),
-		DBName:     getEnv("DB_NAME", ""),
-		ServerPort: getEnvAsInt("SERVER_PORT", 8080),
+		DBHost:          getEnv("DB_HOST", "localhost"),
+		DBPort:          getEnvAsInt("DB_PORT", 5432),
+		DBUser:          getEnv("DB_USER", ""),
+		DBPassword:      getEnv("DB_PASSWORD", ""),
+		DBName:          getEnv("DB_NAME", ""),
+		ServerPort:      getEnvAsInt("SERVER_PORT", 8080),
+		NLPServiceURL:   getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
+		SAPBaseURL:      getEnv("SAP_BASE_URL", ""),
+		SAPClientID:     getEnv("SAP_CLIENT_ID", ""),
+		SAPClientSecret: getEnv("SAP_CLIENT_SECRET", ""),
+		AllowedOrigin:   getEnv("ALLOWED_ORIGIN", "http://localhost:5173"),
 	}
 
 	return config, nil

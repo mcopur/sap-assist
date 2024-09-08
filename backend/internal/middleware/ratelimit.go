@@ -48,15 +48,15 @@ func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 	return limiter
 }
 
-func RateLimit(limiter *IPRateLimiter) func(next http.HandlerFunc) http.HandlerFunc {
-	return func(next http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
+func RateLimit(limiter *IPRateLimiter) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ip := r.RemoteAddr
 			if !limiter.GetLimiter(ip).Allow() {
 				utils.RespondWithError(w, http.StatusTooManyRequests, "Rate limit exceeded")
 				return
 			}
 			next.ServeHTTP(w, r)
-		}
+		})
 	}
 }

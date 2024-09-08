@@ -22,13 +22,14 @@ func NewNLPService(baseURL string) *NLPService {
 	}
 }
 
-func (n *NLPService) ProcessMessage(input models.UserInput) (*models.IntentResponse, error) {
+func (s *NLPService) ProcessMessage(input models.UserInput) (*models.IntentResponse, error) {
+	url := fmt.Sprintf("%s/process", s.baseURL)
 	requestBody, err := json.Marshal(input)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling request: %v", err)
 	}
 
-	resp, err := n.client.Post(n.baseURL+"/process", "application/json", bytes.NewBuffer(requestBody))
+	resp, err := s.client.Post(url, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, fmt.Errorf("error sending request to NLP service: %v", err)
 	}

@@ -1,9 +1,7 @@
-// backend/internal/service/service.go
 package service
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -11,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/mcopur/sap-assist/internal/models"
 	"github.com/mcopur/sap-assist/internal/repository"
 	"github.com/mcopur/sap-assist/internal/utils"
@@ -20,43 +19,45 @@ type Service struct {
 	repo       *repository.PostgresRepository
 	NLPService *NLPService
 	httpClient *http.Client
+	sapConfig  *SAPConfig
 }
 
-func NewService(repo *repository.PostgresRepository, nlpService *NLPService) *Service {
+type SAPConfig struct {
+	BaseURL      string
+	ClientID     string
+	ClientSecret string
+}
+
+func NewService(repo *repository.PostgresRepository, nlpService *NLPService, sapConfig *SAPConfig) *Service {
 	return &Service{
 		repo:       repo,
 		NLPService: nlpService,
 		httpClient: &http.Client{},
+		sapConfig:  sapConfig,
 	}
 }
 
 func (s *Service) SendLeaveRequest(personnelNumber, startDate, endDate string) (interface{}, error) {
-	url := fmt.Sprintf("https://10.1.4.21:44300/sap/opu/odata/sap/ZCXP_LEAVE_REQUEST_SRV/LEAVE_REQUESTSet('0AA94D873C191EDAA6B96F42599EEB77')")
-	method := "PUT"
+	url := fmt.Sprintf("%s/sap/opu/odata/sap/ZCXP_LEAVE_REQUEST_SRV/LEAVE_REQUESTSet", s.sapConfig.BaseURL)
+	method := "POST"
 
+	requestID := uuid.New().String()
 	payload := map[string]interface{}{
-		"d": map[string]interface{}{
-			"__metadata": map[string]string{
-				"id":   "http://sid-hdb-s4h.dummy.nodomain:50000/sap/opu/odata/sap/ZCXP_LEAVE_REQUEST_SRV/LEAVE_REQUESTSet('0AA94D873C191EDAA6B96F42599EEB77')",
-				"uri":  "http://sid-hdb-s4h.dummy.nodomain:50000/sap/opu/odata/sap/ZCXP_LEAVE_REQUEST_SRV/LEAVE_REQUESTSet('0AA94D873C191EDAA6B96F42599EEB77')",
-				"type": "ZCXP_LEAVE_REQUEST_SRV.LEAVE_REQUEST",
-			},
-			"PersonnelNumber":       personnelNumber,
-			"RequestId":             "0AA94D873C191EDAA6B96F42599EEB77",
-			"Status":                "",
-			"StatusText":            "",
-			"EndDate":               endDate,
-			"StartDate":             startDate,
-			"RequestOrAttabs":       "",
-			"AttabsHours":           "0.00",
-			"AttendanceAbsenceDays": "0.00",
-			"CalendarDays":          "1.00",
-			"PayrollDays":           "0.00",
-			"PayrollHours":          "0.00",
-			"SubtypeDescription":    "",
-			"Deduction":             "",
-			"DeductionTooltip":      "",
-		},
+		"PersonnelNumber":       personnelNumber,
+		"RequestId":             requestID,
+		"Status":                "",
+		"StatusText":            "",
+		"EndDate":               endDate,
+		"StartDate":             startDate,
+		"RequestOrAttabs":       "",
+		"AttabsHours":           "0.00",
+		"AttendanceAbsenceDays": "0.00",
+		"CalendarDays":          "1.00",
+		"PayrollDays":           "0.00",
+		"PayrollHours":          "0.00",
+		"SubtypeDescription":    "",
+		"Deduction":             "",
+		"DeductionTooltip":      "",
 	}
 
 	jsonPayload, err := json.Marshal(payload)
@@ -69,18 +70,10 @@ func (s *Service) SendLeaveRequest(personnelNumber, startDate, endDate string) (
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 
-	// SAP örneğinden alınan header'ları ekliyoruz
-	req.Header.Add("X-CSRF-TOKEN", "kOfFW0W7bQwTjqx5sDnwyw==")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", "Basic c2RlbWlydGFnOkNvZGV4MjAyNCo=")
-	req.Header.Add("Cookie", "MYSAPSSO2=AjQxMDMBABhTAEQARQBNAEkAUgBUAEEARwAgACAAIAACAAYxADAAMAADABBTADQASAAgACAAIAAgACAABAAYMgAwADIANAAwADcAMgAyADEAOAAyADQABQAEAAAACAYAAlgACQACRQD%2fAPswgfgGCSqGSIb3DQEHAqCB6jCB5wIBATELMAkGBSsOAwIaBQAwCwYJKoZIhvcNAQcBMYHHMIHEAgEBMBowDjEMMAoGA1UEAxMDUzRIAggKICEFGAlUATAJBgUrDgMCGgUAoF0wGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjQwNzIyMTgyNDU0WjAjBgkqhkiG9w0BCQQxFgQUFht%210ms9RLYlCg7UNq%21Qb3EgC%21MwCQYHKoZIzjgEAwQuMCwCFFzs26j9tlv3BWi7MBkXiGwZpLfVAhReFJ64YxPfXQgMTJFJzfLEBTx6EA%3d%3d; SAP_SESSIONID_S4H_100=5aD9VYQ3Ni58T249W4Ur4jyMgVZIXxHvrJ_FbZiUVsU%3d; sap-usercontext=sap-client=100")
+	req.Header.Add("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(s.sapConfig.ClientID+":"+s.sapConfig.ClientSecret))))
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr}
-
-	resp, err := client.Do(req)
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
@@ -91,7 +84,7 @@ func (s *Service) SendLeaveRequest(personnelNumber, startDate, endDate string) (
 		return nil, fmt.Errorf("error reading response body: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
 	}
 
@@ -104,14 +97,8 @@ func (s *Service) SendLeaveRequest(personnelNumber, startDate, endDate string) (
 }
 
 func (s *Service) Login(personnelNumber, password string) (string, error) {
-	url := "https://10.1.4.21:44300/sap/opu/odata/sap/ZCXP_LEAVE_REQUEST_SRV/LEAVE_REQUESTSet"
+	url := fmt.Sprintf("%s/sap/opu/odata/sap/ZCXP_LEAVE_REQUEST_SRV/LEAVE_REQUESTSet", s.sapConfig.BaseURL)
 	method := "GET"
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
 
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
@@ -121,7 +108,7 @@ func (s *Service) Login(personnelNumber, password string) (string, error) {
 	auth := base64.StdEncoding.EncodeToString([]byte(personnelNumber + ":" + password))
 	req.Header.Add("Authorization", "Basic "+auth)
 
-	resp, err := client.Do(req)
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -131,11 +118,9 @@ func (s *Service) Login(personnelNumber, password string) (string, error) {
 		return "", fmt.Errorf("login failed")
 	}
 
-	// Extract necessary information from response headers
 	csrfToken := resp.Header.Get("X-CSRF-Token")
 	cookie := resp.Header.Get("Set-Cookie")
 
-	// Create a token string containing all necessary information
 	token := fmt.Sprintf("%s:%s:%s:%s", personnelNumber, csrfToken, auth, cookie)
 	encodedToken := base64.StdEncoding.EncodeToString([]byte(token))
 

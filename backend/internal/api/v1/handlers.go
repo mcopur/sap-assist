@@ -1,4 +1,3 @@
-// backend/internal/api/v1/handlers.go
 package v1
 
 import (
@@ -23,39 +22,32 @@ func NewAPIv1(service *service.Service) *APIv1 {
 }
 
 func (api *APIv1) RegisterRoutes(r *mux.Router) {
-
 	r.HandleFunc("/login", api.loginHandler).Methods("POST")
-
 	r.HandleFunc("/users", api.createUserHandler).Methods("POST")
 	r.HandleFunc("/users/{id}", api.getUserHandler).Methods("GET")
 	r.HandleFunc("/users/{id}", api.updateUserHandler).Methods("PUT")
 	r.HandleFunc("/users/{id}", api.deleteUserHandler).Methods("DELETE")
-
 	r.HandleFunc("/leave-requests", api.createLeaveRequestHandler).Methods("POST")
 	r.HandleFunc("/leave-requests/{id}", api.getLeaveRequestHandler).Methods("GET")
 	r.HandleFunc("/leave-requests/{id}", api.updateLeaveRequestHandler).Methods("PUT")
 	r.HandleFunc("/leave-requests/{id}", api.deleteLeaveRequestHandler).Methods("DELETE")
 	r.HandleFunc("/users/{userId}/leave-requests", api.getLeaveRequestsByUserHandler).Methods("GET")
-
 	r.HandleFunc("/purchase-requests", api.createPurchaseRequestHandler).Methods("POST")
 	r.HandleFunc("/purchase-requests/{id}", api.getPurchaseRequestHandler).Methods("GET")
 	r.HandleFunc("/purchase-requests/{id}", api.updatePurchaseRequestHandler).Methods("PUT")
 	r.HandleFunc("/purchase-requests/{id}", api.deletePurchaseRequestHandler).Methods("DELETE")
 	r.HandleFunc("/users/{userId}/purchase-requests", api.getPurchaseRequestsByUserHandler).Methods("GET")
-
-	r.HandleFunc("/classify", api.ClassifyIntentHandler).Methods("POST")
 	r.HandleFunc("/process", api.ProcessMessageHandler).Methods("POST")
-
 }
 
-func (api *APIv1) ClassifyIntentHandler(w http.ResponseWriter, r *http.Request) {
+func (api *APIv1) ProcessMessageHandler(w http.ResponseWriter, r *http.Request) {
 	var userInput models.UserInput
 	if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
-	intentResponse, err := api.service.NLPService.ProcessMessage(userInput)
+	intentResponse, err := api.service.ProcessMessage(userInput)
 	if err != nil {
 		log.Printf("Error processing message: %v", err)
 		utils.RespondWithError(w, http.StatusInternalServerError, "Error processing message")
@@ -89,15 +81,6 @@ func (api *APIv1) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Gerçek login işlemi yerine geçici bir token üret
-	// Gerçek ortamda bu kod kaldırılmalıdır.
-	if loginRequest.PersonnelNumber == "test" && loginRequest.Password == "test" {
-		token := "temporary_test_token"
-		utils.RespondWithJSON(w, http.StatusOK, map[string]string{"token": token})
-		return
-	}
-
-	// Gerçek login işlemi
 	token, err := api.service.Login(loginRequest.PersonnelNumber, loginRequest.Password)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusUnauthorized, "Invalid credentials")
@@ -486,21 +469,4 @@ func (api *APIv1) getPurchaseRequestsByUserHandler(w http.ResponseWriter, r *htt
 		return
 	}
 	utils.RespondWithJSON(w, http.StatusOK, requests)
-}
-
-func (api *APIv1) ProcessMessageHandler(w http.ResponseWriter, r *http.Request) {
-	var userInput models.UserInput
-	if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
-		return
-	}
-
-	intentResponse, err := api.service.NLPService.ProcessMessage(userInput)
-	if err != nil {
-		log.Printf("Error processing message: %v", err)
-		utils.RespondWithError(w, http.StatusInternalServerError, "Error processing message")
-		return
-	}
-
-	utils.RespondWithJSON(w, http.StatusOK, intentResponse)
 }

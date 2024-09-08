@@ -1,7 +1,9 @@
 import os
+from nlp.src.utils.entity_extraction import extract_entities
 import torch
 import pickle
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoModelForCausalLM
+from nlp.src.utils.data_preprocessing import preprocess_text
 
 
 class Chatbot:
@@ -28,30 +30,34 @@ class Chatbot:
             self.label_encoder = pickle.load(f)
 
     def process_message(self, text):
-        # Metin ön işleme
-        preprocessed_text = preprocess_text(text)
+        try:
+            # Metin ön işleme
+            preprocessed_text = preprocess_text(text)
 
-        # Intent sınıflandırma
-        inputs = self.intent_tokenizer(
-            preprocessed_text, return_tensors="pt", truncation=True, padding=True).to(self.device)
-        with torch.no_grad():
-            outputs = self.intent_model(**inputs)
+            # Intent sınıflandırma
+            inputs = self.intent_tokenizer(
+                preprocessed_text, return_tensors="pt", truncation=True, padding=True).to(self.device)
+            with torch.no_grad():
+                outputs = self.intent_model(**inputs)
 
-        logits = outputs.logits
-        probabilities = torch.nn.functional.softmax(logits, dim=-1)
-        confidence, predicted_class = torch.max(probabilities, dim=-1)
+            logits = outputs.logits
+            probabilities = torch.nn.functional.softmax(logits, dim=-1)
+            confidence, predicted_class = torch.max(probabilities, dim=-1)
 
-        intent = self.label_encoder.inverse_transform(
-            [predicted_class.item()])[0]
-        confidence = confidence.item()
+            intent = self.label_encoder.inverse_transform(
+                [predicted_class.item()])[0]
+            confidence = confidence.item()
 
-        # Entity extraction
-        entities = extract_entities(text)
+            # Entity extraction
+            entities = extract_entities(text)
 
-        # Response generation
-        response = self.generate_response(intent, entities, text)
+            # Response generation
+            response = self.generate_response(intent, entities)
 
-        return intent, confidence, response, entities
+            return intent, confidence, response, entities
+        except Exception as e:
+            logger.error(f"Error in process_message: {str(e)}")
+            raise
 
     def generate_response(self, intent, entities, original_text):
         # Yanıt modeli için giriş metni oluştur

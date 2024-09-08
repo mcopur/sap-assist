@@ -1,4 +1,3 @@
-// backend/cmd/server/main.go
 package main
 
 import (
@@ -45,13 +44,18 @@ func main() {
 	defer db.Close()
 
 	repo := database.NewRepository(db)
-	nlpService := service.NewNLPService("http://localhost:5000") // NLP servisi URL'sini buraya girin
-	svc := service.NewService(repo, nlpService)                  // NLPService'i burada atayın
+	nlpService := service.NewNLPService(cfg.NLPServiceURL)
+	sapConfig := &service.SAPConfig{
+		BaseURL:      cfg.SAPBaseURL,
+		ClientID:     cfg.SAPClientID,
+		ClientSecret: cfg.SAPClientSecret,
+	}
+	svc := service.NewService(repo, nlpService, sapConfig)
 
 	limiter := middleware.NewIPRateLimiter(rate.Limit(5), 10)
 
 	corsOptions := handlers.CORS(
-		handlers.AllowedOrigins([]string{"http://localhost:5173"}),
+		handlers.AllowedOrigins([]string{cfg.AllowedOrigin}),
 		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
 		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
 		handlers.AllowCredentials(),
@@ -59,24 +63,16 @@ func main() {
 
 	r := mux.NewRouter()
 
-	// Middleware'leri uygulama
-	r.Use(func(next http.Handler) http.Handler {
-		return middleware.Logging(next.ServeHTTP)
-	})
+	r.Use(middleware.Logging)
 	r.Use(corsOptions)
-	r.Use(func(next http.Handler) http.Handler {
-		return middleware.RateLimit(limiter)(next.ServeHTTP)
-	})
+	r.Use(middleware.RateLimit(limiter))
 
-	// OPTIONS metodunu ele almak için handler
 	r.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	// Swagger
 	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 
-	// API v1
 	apiV1 := v1.NewAPIv1(svc)
 	apiV1Router := r.PathPrefix("/api/v1").Subrouter()
 	apiV1.RegisterRoutes(apiV1Router)
