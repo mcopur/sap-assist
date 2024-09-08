@@ -1,88 +1,83 @@
-from nlp.src.utils.entity_extraction import extract_entities
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, BertForMaskedLM
-import torch
-import logging
-from flask import Flask, request, jsonify
 import os
-import sys
-
-# Proje kök dizinini Python yoluna ekle
-project_root = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', '..', '..'))
-sys.path.insert(0, project_root)
-
-
-logger = logging.getLogger(__name__)
+import torch
+import pickle
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoModelForCausalLM
 
 
 class Chatbot:
-    def __init__(self, intent_model_path, response_model_path):
+    def __init__(self, intent_model_path, response_model_path, project_root):
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
 
-        # Intent Classification Model
+        # Intent model
         self.intent_tokenizer = AutoTokenizer.from_pretrained(
-            intent_model_path)
+            intent_model_path, local_files_only=True)
         self.intent_model = AutoModelForSequenceClassification.from_pretrained(
-            intent_model_path).to(self.device)
+            intent_model_path, local_files_only=True).to(self.device)
 
-        # Response Generation Model
+        # Response model
         self.response_tokenizer = AutoTokenizer.from_pretrained(
-            response_model_path)
-        self.response_model = BertForMaskedLM.from_pretrained(
-            response_model_path).to(self.device)
+            response_model_path, local_files_only=True)
+        self.response_model = AutoModelForCausalLM.from_pretrained(
+            response_model_path, local_files_only=True).to(self.device)
 
-    def classify_intent(self, text):
+        # Label encoder'ı yükle
+        label_encoder_path = os.path.join(
+            project_root, 'nlp', 'models', 'label_encoder.pkl')
+        with open(label_encoder_path, 'rb') as f:
+            self.label_encoder = pickle.load(f)
+
+    def process_message(self, text):
+        # Metin ön işleme
+        preprocessed_text = preprocess_text(text)
+
+        # Intent sınıflandırma
         inputs = self.intent_tokenizer(
-            text, return_tensors="pt", truncation=True, padding=True).to(self.device)
+            preprocessed_text, return_tensors="pt", truncation=True, padding=True).to(self.device)
         with torch.no_grad():
             outputs = self.intent_model(**inputs)
 
-        probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)
-        predicted_class = torch.argmax(probabilities, dim=-1).item()
-        confidence = probabilities[0][predicted_class].item()
+        logits = outputs.logits
+        probabilities = torch.nn.functional.softmax(logits, dim=-1)
+        confidence, predicted_class = torch.max(probabilities, dim=-1)
 
-        intent = self.intent_model.config.id2label[predicted_class]
-        return intent, confidence
+        intent = self.label_encoder.inverse_transform(
+            [predicted_class.item()])[0]
+        confidence = confidence.item()
 
-    def generate_response(self, intent, entities, context):
-        prompt = f"Intent: {intent}\nEntities: {entities}\nContext: {context}\nResponse:"
-        inputs = self.response_tokenizer(
-            prompt, return_tensors="pt", truncation=True, padding=True).to(self.device)
-
-        with torch.no_grad():
-            outputs = self.response_model.generate(
-                **inputs,
-                max_length=150,
-                num_return_sequences=1,
-                no_repeat_ngram_size=2,
-                do_sample=True,
-                top_k=50,
-                top_p=0.95,
-                temperature=0.7
-            )
-
-        response = self.response_tokenizer.decode(
-            outputs[0], skip_special_tokens=True)
-        return response.strip()
-
-    def process_message(self, text, context):
-        logger.info(f"Processing message: {text}")
-
-        intent, confidence = self.classify_intent(text)
+        # Entity extraction
         entities = extract_entities(text)
 
-        logger.info(f"Classified intent: {intent}, confidence: {confidence}")
-        logger.info(f"Extracted entities: {entities}")
+        # Response generation
+        response = self.generate_response(intent, entities, text)
 
-        response = self.generate_response(intent, entities, context)
+        return intent, confidence, response, entities
 
-        result = {
-            'intent': intent,
-            'confidence': confidence,
-            'entities': entities,
-            'response': response,
-            'context': context
-        }
+    def generate_response(self, intent, entities, original_text):
+        # Yanıt modeli için giriş metni oluştur
+        input_text = f"Intent: {intent}\nEntities: {entities}\nUser: {original_text}\nAssistant:"
 
-        return result
+        # Yanıt modelini kullanarak cevap oluştur
+        input_ids = self.response_tokenizer.encode(
+            input_text, return_tensors="pt").to(self.device)
+        attention_mask = torch.ones(
+            input_ids.shape, dtype=torch.long, device=self.device)
+
+        output = self.response_model.generate(
+            input_ids,
+            attention_mask=attention_mask,
+            max_length=150,
+            num_return_sequences=1,
+            no_repeat_ngram_size=2,
+            top_k=50,
+            top_p=0.95,
+            temperature=0.7
+        )
+
+        response = self.response_tokenizer.decode(
+            output[0], skip_special_tokens=True)
+
+        # "Assistant:" kısmını kaldır
+        response = response.split("Assistant:")[-1].strip()
+
+        return response
