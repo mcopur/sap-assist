@@ -26,7 +26,6 @@ class Chatbot:
         self.response_model = AutoModelForCausalLM.from_pretrained(
             response_model_path, local_files_only=True).to(self.device)
 
-        # Label encoder'ı yükle
         label_encoder_path = os.path.join(os.path.dirname(
             intent_model_path), '..', 'label_encoder.pkl')
         logger.info(f"Loading label encoder from {label_encoder_path}")
@@ -51,10 +50,6 @@ class Chatbot:
             [predicted_class.item()])[0]
         confidence = confidence.item()
 
-        # Düşük güven skorları için eşik değeri
-        if confidence < 0.5:
-            intent = "unknown"
-
         entities = extract_entities(text)
 
         response = self.generate_response(intent, entities, text)
@@ -64,23 +59,16 @@ class Chatbot:
         return intent, confidence, response, entities
 
     def generate_response(self, intent, entities, original_text):
-        # Response model için giriş metni oluştur
         input_text = f"Intent: {intent}\nEntities: {entities}\nUser: {original_text}\nAssistant:"
-
-        # Response modelini kullanarak cevap oluştur
         input_ids = self.response_tokenizer.encode(
             input_text, return_tensors="pt").to(self.device)
-        attention_mask = torch.ones(
-            input_ids.shape, dtype=torch.long, device=self.device)
-
-        max_length = 150  # Maksimum cevap uzunluğu
 
         output = self.response_model.generate(
             input_ids,
-            attention_mask=attention_mask,
-            max_length=max_length,
+            max_length=150,
             num_return_sequences=1,
             no_repeat_ngram_size=2,
+            do_sample=True,
             top_k=50,
             top_p=0.95,
             temperature=0.7
@@ -88,8 +76,6 @@ class Chatbot:
 
         response = self.response_tokenizer.decode(
             output[0], skip_special_tokens=True)
-
-        # "Assistant:" kısmını kaldır
         response = response.split("Assistant:")[-1].strip()
 
         return response
