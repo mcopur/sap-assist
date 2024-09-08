@@ -37,6 +37,7 @@ class Chatbot:
         logger.debug(f"Processing message: {text}")
         preprocessed_text = preprocess_text(text)
 
+        # Intent sınıflandırma
         inputs = self.intent_tokenizer(
             preprocessed_text, return_tensors="pt", truncation=True, padding=True).to(self.device)
         with torch.no_grad():
@@ -50,6 +51,10 @@ class Chatbot:
             [predicted_class.item()])[0]
         confidence = confidence.item()
 
+        # Düşük güven skorları için eşik değeri
+        if confidence < 0.5:
+            intent = "unknown"
+
         entities = extract_entities(text)
 
         response = self.generate_response(intent, entities, text)
@@ -59,5 +64,32 @@ class Chatbot:
         return intent, confidence, response, entities
 
     def generate_response(self, intent, entities, original_text):
-        # Basit bir yanıt oluşturma
-        return f"Anladım, intent: {intent}, entities: {entities}, original text: {original_text}"
+        # Response model için giriş metni oluştur
+        input_text = f"Intent: {intent}\nEntities: {entities}\nUser: {original_text}\nAssistant:"
+
+        # Response modelini kullanarak cevap oluştur
+        input_ids = self.response_tokenizer.encode(
+            input_text, return_tensors="pt").to(self.device)
+        attention_mask = torch.ones(
+            input_ids.shape, dtype=torch.long, device=self.device)
+
+        max_length = 150  # Maksimum cevap uzunluğu
+
+        output = self.response_model.generate(
+            input_ids,
+            attention_mask=attention_mask,
+            max_length=max_length,
+            num_return_sequences=1,
+            no_repeat_ngram_size=2,
+            top_k=50,
+            top_p=0.95,
+            temperature=0.7
+        )
+
+        response = self.response_tokenizer.decode(
+            output[0], skip_special_tokens=True)
+
+        # "Assistant:" kısmını kaldır
+        response = response.split("Assistant:")[-1].strip()
+
+        return response
