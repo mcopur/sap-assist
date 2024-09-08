@@ -24,7 +24,7 @@ func NewNLPService(baseURL string) *NLPService {
 
 func (s *NLPService) ProcessMessage(input models.UserInput) (*models.IntentResponse, error) {
 	url := fmt.Sprintf("%s/process", s.baseURL)
-	requestBody, err := json.Marshal(input)
+	requestBody, err := json.Marshal(map[string]string{"text": input.Text})
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling request: %v", err)
 	}
@@ -41,6 +41,13 @@ func (s *NLPService) ProcessMessage(input models.UserInput) (*models.IntentRespo
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		var errorResponse struct {
+			Error   string `json:"error"`
+			Details string `json:"details"`
+		}
+		if err := json.Unmarshal(body, &errorResponse); err == nil {
+			return nil, fmt.Errorf("NLP service error: %s, details: %s", errorResponse.Error, errorResponse.Details)
+		}
 		return nil, fmt.Errorf("NLP service returned non-200 status code: %d, body: %s", resp.StatusCode, string(body))
 	}
 
