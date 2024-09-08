@@ -58,24 +58,25 @@ class Chatbot:
             f"Processed message. Intent: {intent}, Confidence: {confidence}, Entities: {entities}")
         return intent, confidence, response, entities
 
-    def generate_response(self, intent, entities, original_text):
-        input_text = f"Intent: {intent}\nEntities: {entities}\nUser: {original_text}\nAssistant:"
-        input_ids = self.response_tokenizer.encode(
-            input_text, return_tensors="pt").to(self.device)
 
-        output = self.response_model.generate(
-            input_ids,
-            max_length=150,
-            num_return_sequences=1,
-            no_repeat_ngram_size=2,
-            do_sample=True,
-            top_k=50,
-            top_p=0.95,
-            temperature=0.7
-        )
+def generate_response(self, intent, entities, original_text):
+    input_text = f"Intent: {intent}\nEntities: {entities}\nUser: {original_text}\nResponse:"
+    input_ids = self.response_tokenizer.encode(
+        input_text, return_tensors="pt").to(self.device)
 
-        response = self.response_tokenizer.decode(
-            output[0], skip_special_tokens=True)
-        response = response.split("Assistant:")[-1].strip()
+    output = self.response_model.generate(
+        input_ids,
+        max_length=150,
+        num_return_sequences=1,
+        no_repeat_ngram_size=2,
+        do_sample=True,
+        top_k=50,
+        top_p=0.95,
+        temperature=0.7
+    )
 
-        return response
+    response = self.response_tokenizer.decode(
+        output[0], skip_special_tokens=True)
+    response = response.split("Response:")[-1].strip()
+
+    return response
