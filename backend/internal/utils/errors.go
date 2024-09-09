@@ -1,41 +1,19 @@
-// backend/internal/utils/errors.go
 package utils
 
-import (
-    "encoding/json"
-    "fmt"
-    "net/http"
-)
-
-type ErrorResponse struct {
-    Message string `json:"message"`
-}
-
 type AppError struct {
-    Code    int    `json:"code"`
-    Message string `json:"message"`
-    Err     error  `json:"-"` // Bu alan JSON çıktısında görünmeyecek
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Err     error  `json:"-"`
 }
 
 func (e *AppError) Error() string {
-    return fmt.Sprintf("code: %d, message: %s, error: %v", e.Code, e.Message, e.Err)
+	return e.Message
 }
 
 func NewAppError(code int, message string, err error) *AppError {
-    return &AppError{
-        Code:    code,
-        Message: message,
-        Err:     err,
-    }
-}
-
-func RespondWithError(w http.ResponseWriter, code int, message string) {
-    RespondWithJSON(w, code, ErrorResponse{Message: message})
-}
-
-func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-    response, _ := json.Marshal(payload)
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(code)
-    w.Write(response)
+	return &AppError{
+		Code:    code,
+		Message: message,
+		Err:     err,
+	}
 }

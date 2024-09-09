@@ -21,6 +21,7 @@ type Config struct {
 	SAPClientID     string
 	SAPClientSecret string
 	AllowedOrigin   string
+	RedisAddr       string
 }
 
 func LoadConfig() (*Config, error) {
@@ -41,6 +42,7 @@ func LoadConfig() (*Config, error) {
 		SAPClientID:     getEnv("SAP_CLIENT_ID", ""),
 		SAPClientSecret: getEnv("SAP_CLIENT_SECRET", ""),
 		AllowedOrigin:   getEnv("ALLOWED_ORIGIN", "http://localhost:5173"),
+		RedisAddr:       getEnv("REDIS_ADDR", "localhost:6379"),
 	}
 
 	return config, nil

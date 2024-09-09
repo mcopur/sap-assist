@@ -1,17 +1,18 @@
-import numpy as np
-from torch.utils.data import Dataset
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, GPT2Tokenizer, GPT2LMHeadModel, TrainingArguments, Trainer, DataCollatorForLanguageModeling
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
-import argparse
-import logging
-import json
+from torch.cuda.amp import autocast
 import torch
+import json
+import logging
+import argparse
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, GPT2Tokenizer, GPT2LMHeadModel, TrainingArguments, Trainer, DataCollatorForLanguageModeling
+from torch.utils.data import Dataset
+import numpy as np
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = ''
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 
 torch.backends.mps.enabled = False
-
 
 # Proje kök dizinini belirleme
 PROJECT_ROOT = os.path.abspath(os.path.join(
@@ -56,6 +57,22 @@ def load_data(file_path):
         return json.load(f)
 
 
+class MixedPrecisionTrainer(Trainer):
+    def training_step(self, model, inputs):
+        model.train()
+        inputs = self._prepare_inputs(inputs)
+
+        with autocast():
+            loss = self.compute_loss(model, inputs)
+
+        if self.args.gradient_accumulation_steps > 1:
+            loss = loss / self.args.gradient_accumulation_steps
+
+        loss.backward()
+
+        return loss.detach()
+
+
 def train_intent_model(data_path, model_save_path):
     logger.info("Starting intent classification model training")
 
@@ -77,9 +94,10 @@ def train_intent_model(data_path, model_save_path):
     model = AutoModelForSequenceClassification.from_pretrained(
         "dbmdz/bert-base-turkish-cased", num_labels=len(label_encoder.classes_))
 
-    # CPU'ya taşı
-    device = torch.device("cpu")
-    model = model.to(device)
+    # Modeli CPU'ya taşı ve tensörleri contiguous hale getir
+    model = model.to('cpu')
+    for param in model.parameters():
+        param.data = param.data.contiguous()
 
     # Veriyi tokenize etme
     train_encodings = tokenizer(train_texts, truncation=True, padding=True)
@@ -104,10 +122,11 @@ def train_intent_model(data_path, model_save_path):
         save_steps=1000,
         load_best_model_at_end=True,
         no_cuda=True,
+        fp16=False,  # CPU kullanıyoruz, bu yüzden fp16'yı devre dışı bırakıyoruz
     )
 
     # Trainer oluşturma ve eğitim
-    trainer = Trainer(
+    trainer = MixedPrecisionTrainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
@@ -170,26 +189,25 @@ def train_response_model(data_path, model_save_path):
 
     # Data collator
     data_collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer, mlm=False
-    )
+        tokenizer=tokenizer, mlm=False)
 
     # Eğitim ayarları
     training_args = TrainingArguments(
         output_dir=os.path.join(model_save_path, 'results'),
-        num_train_epochs=10,  # Epoch sayısını artırın
-        # Batch size'ı artırın (eğer bellek izin veriyorsa)
+        num_train_epochs=10,
         per_device_train_batch_size=8,
         save_steps=1000,
         save_total_limit=2,
         prediction_loss_only=True,
-        no_cuda=True,
-        learning_rate=5e-5,  # Learning rate'i ayarlayın
+        no_cuda=True,  # CPU kullanımı için
+        learning_rate=5e-5,
         weight_decay=0.01,
         warmup_steps=500,
+        # fp16 parametresini kaldırdık
     )
 
     # Trainer oluşturma ve eğitim
-    trainer = Trainer(
+    trainer = Trainer(  # MixedPrecisionTrainer yerine normal Trainer kullanıyoruz
         model=model,
         args=training_args,
         train_dataset=dataset,

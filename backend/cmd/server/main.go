@@ -5,6 +5,9 @@ import (
 	"log"
 	"net/http"
 
+	"time"
+
+	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	v1 "github.com/mcopur/sap-assist/internal/api/v1"
@@ -13,7 +16,6 @@ import (
 	"github.com/mcopur/sap-assist/internal/middleware"
 	"github.com/mcopur/sap-assist/internal/service"
 	httpSwagger "github.com/swaggo/http-swagger"
-	"golang.org/x/time/rate"
 )
 
 // @title SAP Assist API
@@ -43,6 +45,11 @@ func main() {
 	}
 	defer db.Close()
 
+	// Redis istemcisini oluşturun
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: cfg.RedisAddr,
+	})
+
 	repo := database.NewRepository(db)
 	nlpService := service.NewNLPService(cfg.NLPServiceURL)
 	sapConfig := &service.SAPConfig{
@@ -52,7 +59,7 @@ func main() {
 	}
 	svc := service.NewService(repo, nlpService, sapConfig)
 
-	limiter := middleware.NewIPRateLimiter(rate.Limit(5), 10)
+	limiter := middleware.NewRedisRateLimiter(redisClient, 100, time.Minute)
 
 	corsOptions := handlers.CORS(
 		handlers.AllowedOrigins([]string{cfg.AllowedOrigin}),
