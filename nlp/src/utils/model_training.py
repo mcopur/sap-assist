@@ -1,21 +1,11 @@
-from transformers import (
-    AutoTokenizer,
-    AutoModelForSequenceClassification,
-    BertTokenizerFast,
-    BertForMaskedLM,
-    GPT2Tokenizer,
-    GPT2LMHeadModel,
-    TrainingArguments,
-    Trainer,
-    DataCollatorForLanguageModeling
-)
-from torch.utils.data import Dataset, DataLoader
+import numpy as np
+from torch.utils.data import Dataset
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, GPT2Tokenizer, GPT2LMHeadModel, TrainingArguments, Trainer, DataCollatorForLanguageModeling
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 import argparse
 import logging
 import json
-import numpy as np
 import torch
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
@@ -49,18 +39,16 @@ class IntentDataset(Dataset):
 
 
 class ResponseDataset(Dataset):
-    def __init__(self, encodings, labels):
+    def __init__(self, encodings):
         self.encodings = encodings
-        self.labels = labels
 
     def __getitem__(self, idx):
-        item = {key: val[idx].clone().detach()
+        item = {key: torch.tensor(val[idx])
                 for key, val in self.encodings.items()}
-        item['labels'] = self.labels[idx].clone().detach()
         return item
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.encodings.input_ids)
 
 
 def load_data(file_path):
@@ -143,17 +131,34 @@ def train_response_model(data_path, model_save_path):
     logger.info("Starting response generation model training")
 
     # Veri yükleme
-    with open(data_path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
+    data = load_data(data_path)
+
+    # Veri yapısını kontrol et
+    logger.info(f"Sample data item: {data[0]}")
 
     # Veriyi uygun formata dönüştürme
     texts = [
-        f"Intent: {item['intent']}\nContext: {json.dumps(item['context'])}\nResponse: {item['response']}" for item in data]
+        f"Intent: {item['intent']}\nContext: {json.dumps(item.get('context', {}))}\nResponse: {item['response']}"
+        for item in data
+    ]
 
     # GPT-2 modelini ve tokenizer'ı yükle
-    tokenizer = GPT2Tokenizer.from_pretrained(
-        "dbmdz/gpt2-turkish-cased", bos_token='<|startoftext|>', eos_token='<|endoftext|>', pad_token='<|pad|>')
-    model = GPT2LMHeadModel.from_pretrained("dbmdz/gpt2-turkish-cased")
+    model_name = "ytu-ce-cosmos/turkish-gpt2"
+    try:
+        tokenizer = GPT2Tokenizer.from_pretrained(
+            model_name, local_files_only=True)
+        model = GPT2LMHeadModel.from_pretrained(
+            model_name, local_files_only=True)
+        logger.info("Model loaded from local files.")
+    except OSError:
+        logger.info("Local model not found. Downloading from Hugging Face.")
+        tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+        model = GPT2LMHeadModel.from_pretrained(model_name)
+
+    # Özel tokenleri ekle
+    special_tokens_dict = {'bos_token': '<|startoftext|>',
+                           'eos_token': '<|endoftext|>', 'pad_token': '<|pad|>'}
+    num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
     model.resize_token_embeddings(len(tokenizer))
 
     # Veriyi tokenize etme
@@ -161,7 +166,7 @@ def train_response_model(data_path, model_save_path):
                           max_length=512, return_tensors="pt")
 
     # Dataset oluşturma
-    dataset = ResponseDataset(encodings, encodings['input_ids'])
+    dataset = ResponseDataset(encodings)
 
     # Data collator
     data_collator = DataCollatorForLanguageModeling(
@@ -171,15 +176,16 @@ def train_response_model(data_path, model_save_path):
     # Eğitim ayarları
     training_args = TrainingArguments(
         output_dir=os.path.join(model_save_path, 'results'),
-        num_train_epochs=10,  # Epoch sayısını artırdık
-        per_device_train_batch_size=8,  # Batch size'ı artırdık
-        save_steps=500,
+        num_train_epochs=10,  # Epoch sayısını artırın
+        # Batch size'ı artırın (eğer bellek izin veriyorsa)
+        per_device_train_batch_size=8,
+        save_steps=1000,
         save_total_limit=2,
         prediction_loss_only=True,
         no_cuda=True,
-        learning_rate=5e-5,  # Öğrenme oranını ekledik
-        weight_decay=0.01,  # Weight decay ekledik
-        warmup_steps=500,  # Warmup steps ekledik
+        learning_rate=5e-5,  # Learning rate'i ayarlayın
+        weight_decay=0.01,
+        warmup_steps=500,
     )
 
     # Trainer oluşturma ve eğitim
@@ -210,7 +216,7 @@ if __name__ == "__main__":
         intent_data_path = os.path.join(
             PROJECT_ROOT, 'nlp', 'data', 'intent_data.json')
         intent_model_save_path = os.path.join(
-            PROJECT_ROOT, 'nlp', 'models', 'intent_classifier')
+            PROJECT_ROOT, 'nlp', 'models', 'intent_classifier_model')
         train_intent_model(intent_data_path, intent_model_save_path)
     elif args.task == 'response':
         response_data_path = os.path.join(

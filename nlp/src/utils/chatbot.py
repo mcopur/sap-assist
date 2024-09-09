@@ -1,7 +1,8 @@
+import re
 import os
 import torch
 import pickle
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, GPT2LMHeadModel, GPT2Tokenizer
 from nlp.src.utils.entity_extraction import extract_entities
 from nlp.src.utils.data_preprocessing import preprocess_text
 import logging
@@ -21,11 +22,12 @@ class Chatbot:
             intent_model_path, local_files_only=True).to(self.device)
 
         logger.info(f"Loading response model from {response_model_path}")
-        self.response_tokenizer = AutoTokenizer.from_pretrained(
+        self.response_tokenizer = GPT2Tokenizer.from_pretrained(
             response_model_path, local_files_only=True)
-        self.response_model = AutoModelForCausalLM.from_pretrained(
+        self.response_model = GPT2LMHeadModel.from_pretrained(
             response_model_path, local_files_only=True).to(self.device)
 
+        # Label encoder'ı yükle
         label_encoder_path = os.path.join(os.path.dirname(
             intent_model_path), '..', 'label_encoder.pkl')
         logger.info(f"Loading label encoder from {label_encoder_path}")
@@ -58,25 +60,34 @@ class Chatbot:
             f"Processed message. Intent: {intent}, Confidence: {confidence}, Entities: {entities}")
         return intent, confidence, response, entities
 
+    def generate_response(self, intent, entities, original_text):
+        prompt = f"Intent: {intent}\nEntities: {entities}\nUser: {original_text}\nAssistant: Lütfen bu kullanıcı girdisine uygun, kısa ve net bir yanıt ver:\n"
 
-def generate_response(self, intent, entities, original_text):
-    input_text = f"Intent: {intent}\nEntities: {entities}\nUser: {original_text}\nResponse:"
-    input_ids = self.response_tokenizer.encode(
-        input_text, return_tensors="pt").to(self.device)
+        input_ids = self.response_tokenizer.encode(
+            prompt, return_tensors="pt").to(self.device)
+        attention_mask = torch.ones(
+            input_ids.shape, dtype=torch.long, device=self.device)
 
-    output = self.response_model.generate(
-        input_ids,
-        max_length=150,
-        num_return_sequences=1,
-        no_repeat_ngram_size=2,
-        do_sample=True,
-        top_k=50,
-        top_p=0.95,
-        temperature=0.7
-    )
+        output = self.response_model.generate(
+            input_ids,
+            attention_mask=attention_mask,
+            max_length=150,
+            num_return_sequences=1,
+            no_repeat_ngram_size=2,
+            do_sample=True,
+            top_k=50,
+            top_p=0.95,
+            temperature=0.7
+        )
 
-    response = self.response_tokenizer.decode(
-        output[0], skip_special_tokens=True)
-    response = response.split("Response:")[-1].strip()
+        response = self.response_tokenizer.decode(
+            output[0], skip_special_tokens=True)
+        response = response.split("Assistant:")[-1].strip()
 
-    return response
+        # Yanıtı temizle
+        response = response.replace("\n", " ").strip()
+        response = re.sub(r'\s+', ' ', response)  # Fazla boşlukları temizle
+        # Context ve Response etiketlerini kaldır
+        response = re.sub(r'Context:.*?Response:', '', response)
+
+        return response
