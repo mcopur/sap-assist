@@ -1,46 +1,34 @@
-import re
-import os
 import torch
-import pickle
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, GPT2LMHeadModel, GPT2Tokenizer
-from nlp.src.utils.entity_extraction import extract_entities
-from nlp.src.utils.data_preprocessing import preprocess_text
-import logging
-
-logger = logging.getLogger(__name__)
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, GPT2Tokenizer, GPT2LMHeadModel
+import json
+import os
 
 
 class Chatbot:
-    def __init__(self, intent_model_path, response_model_path):
+    def __init__(self, intent_model_path, response_model_path, label_encoder_path):
+        self.intent_tokenizer = AutoTokenizer.from_pretrained(
+            intent_model_path)
+        self.intent_model = AutoModelForSequenceClassification.from_pretrained(
+            intent_model_path)
+        self.intent_model.eval()
+
+        self.response_tokenizer = GPT2Tokenizer.from_pretrained(
+            response_model_path)
+        self.response_model = GPT2LMHeadModel.from_pretrained(
+            response_model_path)
+        self.response_model.eval()
+
+        with open(label_encoder_path, 'r') as f:
+            self.intent_labels = json.load(f)
+
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
+        self.intent_model.to(self.device)
+        self.response_model.to(self.device)
 
-        logger.info(f"Loading intent model from {intent_model_path}")
-        self.intent_tokenizer = AutoTokenizer.from_pretrained(
-            intent_model_path, local_files_only=True)
-        self.intent_model = AutoModelForSequenceClassification.from_pretrained(
-            intent_model_path, local_files_only=True).to(self.device)
-
-        logger.info(f"Loading response model from {response_model_path}")
-        self.response_tokenizer = GPT2Tokenizer.from_pretrained(
-            response_model_path, local_files_only=True)
-        self.response_model = GPT2LMHeadModel.from_pretrained(
-            response_model_path, local_files_only=True).to(self.device)
-
-        # Label encoder'ı yükle
-        label_encoder_path = os.path.join(os.path.dirname(
-            intent_model_path), '..', 'label_encoder.pkl')
-        logger.info(f"Loading label encoder from {label_encoder_path}")
-        with open(label_encoder_path, 'rb') as f:
-            self.label_encoder = pickle.load(f)
-
-    def process_message(self, text):
-        logger.debug(f"Processing message: {text}")
-        preprocessed_text = preprocess_text(text)
-
-        # Intent sınıflandırma
+    def classify_intent(self, text):
         inputs = self.intent_tokenizer(
-            preprocessed_text, return_tensors="pt", truncation=True, padding=True).to(self.device)
+            text, return_tensors="pt", truncation=True, padding=True).to(self.device)
         with torch.no_grad():
             outputs = self.intent_model(**inputs)
 
@@ -48,46 +36,50 @@ class Chatbot:
         probabilities = torch.nn.functional.softmax(logits, dim=-1)
         confidence, predicted_class = torch.max(probabilities, dim=-1)
 
-        intent = self.label_encoder.inverse_transform(
-            [predicted_class.item()])[0]
-        confidence = confidence.item()
+        intent = self.intent_labels[predicted_class.item()]
+        return intent, confidence.item()
 
-        entities = extract_entities(text)
-
-        response = self.generate_response(intent, entities, text)
-
-        logger.debug(
-            f"Processed message. Intent: {intent}, Confidence: {confidence}, Entities: {entities}")
-        return intent, confidence, response, entities
-
-    def generate_response(self, intent, entities, original_text):
-        prompt = f"Intent: {intent}\nEntities: {entities}\nUser: {original_text}\nAssistant: Lütfen bu kullanıcı girdisine uygun, kısa ve net bir yanıt ver:\n"
-
+    def generate_response(self, intent, entities):
+        input_text = f"Intent: {intent}\nContext: {json.dumps(entities)}\nResponse:"
         input_ids = self.response_tokenizer.encode(
-            prompt, return_tensors="pt").to(self.device)
-        attention_mask = torch.ones(
-            input_ids.shape, dtype=torch.long, device=self.device)
+            input_text, return_tensors="pt").to(self.device)
 
-        output = self.response_model.generate(
-            input_ids,
-            attention_mask=attention_mask,
-            max_length=150,
-            num_return_sequences=1,
-            no_repeat_ngram_size=2,
-            do_sample=True,
-            top_k=50,
-            top_p=0.95,
-            temperature=0.7
-        )
+        with torch.no_grad():
+            output = self.response_model.generate(
+                input_ids, max_length=150, num_return_sequences=1, no_repeat_ngram_size=2)
 
         response = self.response_tokenizer.decode(
             output[0], skip_special_tokens=True)
-        response = response.split("Assistant:")[-1].strip()
+        return response.split("Response:")[-1].strip()
 
-        # Yanıtı temizle
-        response = response.replace("\n", " ").strip()
-        response = re.sub(r'\s+', ' ', response)  # Fazla boşlukları temizle
-        # Context ve Response etiketlerini kaldır
-        response = re.sub(r'Context:.*?Response:', '', response)
+    def process_message(self, message):
+        intent, confidence = self.classify_intent(message)
+        # Bu fonksiyonu implement etmeniz gerekecek
+        entities = self.extract_entities(message)
+        response = self.generate_response(intent, entities)
+        return intent, confidence, response, entities
 
-        return response
+    def extract_entities(self, message):
+        # Bu fonksiyonu, varlık çıkarımı için implement etmeniz gerekecek
+        # Şimdilik boş bir sözlük döndürüyoruz
+        return {}
+
+# Chatbot'u başlatmak için kullanılacak fonksiyon
+
+
+class defaultLabelEncoder:
+    def __init__(self):
+        self.classes_ = ["greeting", "leave_request_annual",
+                         "leave_request_excuse", "purchase_request", "unknown"]
+
+    def inverse_transform(self, indices):
+        return [self.classes_[i] for i in indices]
+
+
+def initialize_chatbot():
+    project_root = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), '..', '..'))
+    model_path = os.path.join(project_root, 'models',
+                              'intent_classifier_model')
+    le_path = os.path.join(project_root, 'models', 'label_encoder.pkl')
+    return Chatbot(model_path, le_path)

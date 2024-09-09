@@ -1,5 +1,5 @@
 import React from 'react';
-import { List, ListItem, ListItemText, Paper, Typography, Avatar, Box } from '@mui/material';
+import { List, ListItem, Paper, Typography, Avatar, Box } from '@mui/material';
 import { Message } from '../types';
 
 interface MessageListProps {
