@@ -21,7 +21,7 @@ const initialState: ChatState = {
 
 export const sendMessage = createAsyncThunk(
   'chat/sendMessage',
-  async (message: string, { dispatch, getState }) => {
+  async (message: string, { dispatch, getState, rejectWithValue }) => {
     try {
       const state = getState() as RootState;
       dispatch(chatSlice.actions.addMessage({ text: message, isUser: true }));
@@ -30,7 +30,7 @@ export const sendMessage = createAsyncThunk(
       const response = await processMessage(message, context);
       
       if (!response || !response.intent) {
-        throw new Error('Invalid response from NLP service');
+        throw new Error('Geçersiz yanıt alındı');
       }
 
       const newContext = { ...context, lastIntent: response.intent };
@@ -41,10 +41,11 @@ export const sendMessage = createAsyncThunk(
       };
     } catch (error) {
       console.error('Error in sendMessage:', error);
-      return { 
-        reply: "Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.", 
-        newContext: {} 
-      };
+      let errorMessage = 'Bir hata oluştu. Lütfen tekrar deneyin.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -77,8 +78,9 @@ export const chatSlice = createSlice({
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.error.message || 'An unknown error occurred';
-        state.messages.push({ text: "Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.", isUser: false });
+        const errorMessage = action.payload as string || 'Bilinmeyen bir hata oluştu';
+        state.error = errorMessage;
+        state.messages.push({ text: errorMessage, isUser: false });
       });
   },
 });
@@ -90,7 +92,6 @@ export const resetChat = createAsyncThunk(
     dispatch(chatSlice.actions.updateContext({}));
   }
 );
-
 
 export const { addMessage, clearMessages, updateContext } = chatSlice.actions;
 export default chatSlice.reducer;

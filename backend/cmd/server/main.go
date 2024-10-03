@@ -50,6 +50,8 @@ func main() {
 		Addr: cfg.RedisAddr,
 	})
 
+	// RateLimiter'ı oluşturun
+	limiter := middleware.NewRateLimiter(redisClient, 100, time.Minute)
 	repo := database.NewRepository(db)
 	nlpService := service.NewNLPService(cfg.NLPServiceURL)
 	sapConfig := &service.SAPConfig{
@@ -58,8 +60,6 @@ func main() {
 		ClientSecret: cfg.SAPClientSecret,
 	}
 	svc := service.NewService(repo, nlpService, sapConfig)
-
-	limiter := middleware.NewRedisRateLimiter(redisClient, 100, time.Minute)
 
 	corsOptions := handlers.CORS(
 		handlers.AllowedOrigins([]string{cfg.AllowedOrigin}),
@@ -72,7 +72,7 @@ func main() {
 
 	r.Use(middleware.Logging)
 	r.Use(corsOptions)
-	r.Use(middleware.RateLimit(limiter))
+	r.Use(limiter.RateLimit)
 
 	r.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

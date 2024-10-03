@@ -1,18 +1,29 @@
 package utils
 
+import "fmt"
+
+type ErrorType string
+
+const (
+	ErrorTypeValidation ErrorType = "VALIDATION_ERROR"
+	ErrorTypeDatabase   ErrorType = "DATABASE_ERROR"
+	ErrorTypeAuth       ErrorType = "AUTHENTICATION_ERROR"
+	ErrorTypeInternal   ErrorType = "INTERNAL_ERROR"
+)
+
 type AppError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	Err     error  `json:"-"`
+	Type    ErrorType
+	Message string
+	Err     error
 }
 
 func (e *AppError) Error() string {
-	return e.Message
+	return fmt.Sprintf("%s: %s", e.Type, e.Message)
 }
 
-func NewAppError(code int, message string, err error) *AppError {
+func NewAppError(errorType ErrorType, message string, err error) *AppError {
 	return &AppError{
-		Code:    code,
+		Type:    errorType,
 		Message: message,
 		Err:     err,
 	}

@@ -1,28 +1,34 @@
-// src/services/api.ts
-
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api/v1';
+const API_BASE_URL = 'http://localhost:5000'; 
 
 export const processMessage = async (message: string, context: any) => {
   try {
     console.log('Processing message:', message);
-    const response = await axios.post(`${API_BASE_URL}/process`, { 
+    const response = await axios.post(`${API_BASE_URL}/classify`, { 
       text: message,
       context: context
     }, {
-      withCredentials: true
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'application/json',
+      }
     });
     console.log('NLP response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error processing message:', error);
     if (axios.isAxiosError(error) && error.response) {
+      console.error('Error processing message:', error);
       console.error('Response data:', error.response.data);
       console.error('Response status:', error.response.status);
-      throw new Error(error.response.data.message || 'An error occurred while processing your request');
+      if (error.response.status === 429) {
+        throw new Error('Çok fazla istek gönderildi. Lütfen biraz bekleyin ve tekrar deneyin.');
+      } else if (error.response.status === 500) {
+        throw new Error('Sunucu hatası oluştu. Lütfen daha sonra tekrar deneyin.');
+      }
+      throw new Error(error.response.data.error || 'Bir hata oluştu');
     }
-    throw new Error('An unknown error occurred');
+    throw new Error('Bilinmeyen bir hata oluştu');
   }
 };
 

@@ -1,56 +1,47 @@
 package middleware
 
 import (
-	"context"
-	"fmt"
-	"net/http"
-	"time"
+    "net/http"
+    "time"
 
-	"github.com/go-redis/redis/v8"
-	"github.com/mcopur/sap-assist/internal/utils"
+    "github.com/go-redis/redis/v8"
+    "github.com/mcopur/sap-assist/internal/utils"
 )
 
-type RedisRateLimiter struct {
-	client      *redis.Client
-	maxRequests int
-	duration    time.Duration
+type RateLimiter struct {
+    redisClient *redis.Client
+    maxRequests int
+    duration    time.Duration
 }
 
-func NewRedisRateLimiter(client *redis.Client, maxRequests int, duration time.Duration) *RedisRateLimiter {
-	return &RedisRateLimiter{
-		client:      client,
-		maxRequests: maxRequests,
-		duration:    duration,
-	}
+func NewRateLimiter(redisClient *redis.Client, maxRequests int, duration time.Duration) *RateLimiter {
+    return &RateLimiter{
+        redisClient: redisClient,
+        maxRequests: maxRequests,
+        duration:    duration,
+    }
 }
 
-func (r *RedisRateLimiter) Allow(key string) bool {
-	ctx := context.Background()
-	now := time.Now().UnixNano()
+func (rl *RateLimiter) RateLimit(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        ctx := r.Context()
+        key := "rate_limit:" + r.RemoteAddr
 
-	pipe := r.client.Pipeline()
-	pipe.ZRemRangeByScore(ctx, key, "0", fmt.Sprintf("%d", now-(r.duration.Nanoseconds())))
-	pipe.ZAdd(ctx, key, &redis.Z{Score: float64(now), Member: now})
-	pipe.ZCard(ctx, key)
-	pipe.Expire(ctx, key, r.duration)
+        count, err := rl.redisClient.Incr(ctx, key).Result()
+        if err != nil {
+            utils.RespondWithError(w, http.StatusInternalServerError, "Rate limiting error")
+            return
+        }
 
-	cmders, err := pipe.Exec(ctx)
-	if err != nil {
-		return false
-	}
+        if count == 1 {
+            rl.redisClient.Expire(ctx, key, rl.duration)
+        }
 
-	reqCount := cmders[2].(*redis.IntCmd).Val()
-	return reqCount <= int64(r.maxRequests)
-}
+        if count > int64(rl.maxRequests) {
+            utils.RespondWithError(w, http.StatusTooManyRequests, "Rate limit exceeded")
+            return
+        }
 
-func RateLimit(limiter *RedisRateLimiter) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if !limiter.Allow(r.RemoteAddr) {
-				utils.RespondWithError(w, http.StatusTooManyRequests, "Rate limit exceeded")
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	}
+        next.ServeHTTP(w, r)
+    })
 }

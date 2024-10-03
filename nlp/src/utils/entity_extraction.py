@@ -1,11 +1,22 @@
 import spacy
-import re
-from datetime import datetime
+import logging
 
-nlp = spacy.load("tr_core_news_md")  # Türkçe model
+logger = logging.getLogger(__name__)
+
+try:
+    nlp = spacy.load("tr_core_news_md")
+    logger.info("Successfully loaded Turkish language model (tr_core_news_md)")
+except IOError:
+    logger.error(
+        "Couldn't load tr_core_news_md. Please ensure it's installed correctly.")
+    nlp = None
 
 
 def extract_entities(text):
+    if nlp is None:
+        logger.error("No language model available. Cannot extract entities.")
+        return {}
+
     doc = nlp(text)
     entities = {
         "DATE": [],
@@ -18,20 +29,4 @@ def extract_entities(text):
         if ent.label_ in entities:
             entities[ent.label_].append(ent.text)
 
-    # Ek tarih ve saat çıkarımı
-    entities["DATE"].extend(extract_dates(text))
-    entities["TIME"].extend(extract_time(text))
-
     return entities
-
-
-def extract_dates(text):
-    date_pattern = r'\d{1,2}[./]\d{1,2}[./]\d{2,4}'
-    dates = re.findall(date_pattern, text)
-    return dates
-
-
-def extract_time(text):
-    time_pattern = r'\d{1,2}:\d{2}'
-    times = re.findall(time_pattern, text)
-    return times

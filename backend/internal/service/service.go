@@ -133,7 +133,7 @@ func (s *Service) CreateUser(user *models.User) error {
 	err := s.repo.CreateUser(user)
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to create user: %v", err)
-		return utils.NewAppError(500, "Failed to create user", err)
+		return utils.NewAppError(utils.ErrorTypeInternal, "Failed to create user", err)
 	}
 	return nil
 }
@@ -143,7 +143,7 @@ func (s *Service) GetUserByID(id int) (*models.User, error) {
 	user, err := s.repo.GetUserByID(id)
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to get user by ID: %v", err)
-		return nil, utils.NewAppError(500, "Failed to get user", err)
+		return nil, utils.NewAppError(utils.ErrorTypeInternal, "Failed to get user", err)
 	}
 	return user, nil
 }
@@ -153,7 +153,7 @@ func (s *Service) UpdateUser(user *models.User) error {
 	err := s.repo.UpdateUser(user)
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to update user: %v", err)
-		return utils.NewAppError(500, "Failed to update user", err)
+		return utils.NewAppError(utils.ErrorTypeInternal, "Failed to update user", err)
 	}
 	return nil
 }
@@ -163,7 +163,7 @@ func (s *Service) DeleteUser(id int) error {
 	err := s.repo.DeleteUser(id)
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to delete user: %v", err)
-		return utils.NewAppError(500, "Failed to delete user", err)
+		return utils.NewAppError(utils.ErrorTypeInternal, "Failed to delete user", err)
 	}
 	return nil
 }
@@ -174,7 +174,7 @@ func (s *Service) CreateLeaveRequest(request *models.LeaveRequest) error {
 	err := s.repo.CreateLeaveRequest(request)
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to create leave request: %v", err)
-		return utils.NewAppError(500, "Failed to create leave request", err)
+		return utils.NewAppError(utils.ErrorTypeInternal, "Failed to create leave request", err)
 	}
 	return nil
 }
@@ -184,7 +184,7 @@ func (s *Service) GetLeaveRequestByID(id int) (*models.LeaveRequest, error) {
 	request, err := s.repo.GetLeaveRequestByID(id)
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to get leave request by ID: %v", err)
-		return nil, utils.NewAppError(500, "Failed to get leave request", err)
+		return nil, utils.NewAppError(utils.ErrorTypeInternal, "Failed to get leave request", err)
 	}
 	return request, nil
 }
@@ -194,7 +194,7 @@ func (s *Service) GetLeaveRequestsByUserID(userID int, pagination *models.Pagina
 	requests, err := s.repo.GetLeaveRequestsByUserIDWithPagination(userID, pagination.GetOffset(), pagination.GetLimit())
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to get leave requests for user: %v", err)
-		return nil, utils.NewAppError(500, "Failed to get leave requests", err)
+		return nil, utils.NewAppError(utils.ErrorTypeInternal, "Failed to get leave requests", err)
 	}
 	return requests, nil
 }
@@ -204,7 +204,7 @@ func (s *Service) UpdateLeaveRequest(request *models.LeaveRequest) error {
 	err := s.repo.UpdateLeaveRequest(request)
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to update leave request: %v", err)
-		return utils.NewAppError(500, "Failed to update leave request", err)
+		return utils.NewAppError(utils.ErrorTypeInternal, "Failed to update leave request", err)
 	}
 	return nil
 }
@@ -214,7 +214,7 @@ func (s *Service) DeleteLeaveRequest(id int) error {
 	err := s.repo.DeleteLeaveRequest(id)
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to delete leave request: %v", err)
-		return utils.NewAppError(500, "Failed to delete leave request", err)
+		return utils.NewAppError(utils.ErrorTypeInternal, "Failed to delete leave request", err)
 	}
 	return nil
 }
@@ -225,7 +225,7 @@ func (s *Service) CreatePurchaseRequest(request *models.PurchaseRequest) error {
 	err := s.repo.CreatePurchaseRequest(request)
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to create purchase request: %v", err)
-		return utils.NewAppError(500, "Failed to create purchase request", err)
+		return utils.NewAppError(utils.ErrorTypeInternal, "Failed to create purchase request", err)
 	}
 	return nil
 }
@@ -235,7 +235,7 @@ func (s *Service) GetPurchaseRequestByID(id int) (*models.PurchaseRequest, error
 	request, err := s.repo.GetPurchaseRequestByID(id)
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to get purchase request by ID: %v", err)
-		return nil, utils.NewAppError(500, "Failed to get purchase request", err)
+		return nil, utils.NewAppError(utils.ErrorTypeInternal, "Failed to get purchase request", err)
 	}
 	return request, nil
 }
@@ -245,7 +245,7 @@ func (s *Service) GetPurchaseRequestsByUserID(userID int, pagination *models.Pag
 	requests, err := s.repo.GetPurchaseRequestsByUserIDWithPagination(userID, pagination.GetOffset(), pagination.GetLimit())
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to get purchase requests for user: %v", err)
-		return nil, utils.NewAppError(500, "Failed to get purchase requests", err)
+		return nil, utils.NewAppError(utils.ErrorTypeInternal, "Failed to get purchase requests", err)
 	}
 	return requests, nil
 }
@@ -255,7 +255,7 @@ func (s *Service) UpdatePurchaseRequest(request *models.PurchaseRequest) error {
 	err := s.repo.UpdatePurchaseRequest(request)
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to update purchase request: %v", err)
-		return utils.NewAppError(500, "Failed to update purchase request", err)
+		return utils.NewAppError(utils.ErrorTypeInternal, "Failed to update purchase request", err)
 	}
 	return nil
 }
@@ -265,7 +265,7 @@ func (s *Service) DeletePurchaseRequest(id int) error {
 	err := s.repo.DeletePurchaseRequest(id)
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to delete purchase request: %v", err)
-		return utils.NewAppError(500, "Failed to delete purchase request", err)
+		return utils.NewAppError(utils.ErrorTypeInternal, "Failed to delete purchase request", err)
 	}
 	return nil
 }
