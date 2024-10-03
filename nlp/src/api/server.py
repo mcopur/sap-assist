@@ -50,7 +50,7 @@ chatbot = initialize_chatbot()
 
 
 @app.route('/classify', methods=['POST'])
-@limiter.limit("30 per minute")  # Hız sınırlaması eklendi
+@limiter.limit("30 per minute")
 def classify():
     if chatbot is None:
         return jsonify({"error": "Chatbot initialization failed"}), 500

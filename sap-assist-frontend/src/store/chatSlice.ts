@@ -21,7 +21,7 @@ const initialState: ChatState = {
 
 export const sendMessage = createAsyncThunk(
   'chat/sendMessage',
-  async (message: string, { dispatch, getState, rejectWithValue }) => {
+  async (message: string, { dispatch, getState }) => {
     try {
       const state = getState() as RootState;
       dispatch(chatSlice.actions.addMessage({ text: message, isUser: true }));
@@ -30,7 +30,7 @@ export const sendMessage = createAsyncThunk(
       const response = await processMessage(message, context);
       
       if (!response || !response.intent) {
-        throw new Error('Geçersiz yanıt alındı');
+        throw new Error('Geçersiz yanıt');
       }
 
       const newContext = { ...context, lastIntent: response.intent };
@@ -45,7 +45,10 @@ export const sendMessage = createAsyncThunk(
       if (error instanceof Error) {
         errorMessage = error.message;
       }
-      return rejectWithValue(errorMessage);
+      return { 
+        reply: errorMessage, 
+        newContext: {} 
+      };
     }
   }
 );
