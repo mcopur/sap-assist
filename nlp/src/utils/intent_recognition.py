@@ -1,4 +1,3 @@
-# nlp/src/utils/intent_recognition.py
 from transformers import DistilBertForSequenceClassification, AutoTokenizer
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -81,12 +80,9 @@ def train_intent_model(texts, labels, tokenizer, device, num_labels):
     return model
 
 
-def classify_intent(text):
-    entities = extract_entities(text)
-    normalized_text = ' '.join([normalize_entity(e, v)
-                               for e, v in entities.items()])
-
-    inputs = tokenizer(normalized_text, return_tensors="pt",
+def classify_intent(text, model, tokenizer, le):
+    model.eval()
+    inputs = tokenizer(text, return_tensors="pt",
                        truncation=True, padding=True)
 
     with torch.no_grad():
@@ -95,6 +91,9 @@ def classify_intent(text):
     logits = outputs.logits
     probabilities = torch.nn.functional.softmax(logits, dim=-1)
     confidence, predicted_class = torch.max(probabilities, dim=-1)
-    intent = le.inverse_transform([predicted_class.item()])[0]
 
-    return intent, confidence.item(), entities
+    if confidence.item() < 0.7:  # Eşik değeri
+        return "unknown", confidence.item()
+
+    intent = le.inverse_transform([predicted_class.item()])[0]
+    return intent, confidence.item()

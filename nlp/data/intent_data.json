@@ -1836,5 +1836,29 @@
    {
      "text": "Tamam, anladım. İyi günler!",
      "intent": "end_conversation"
-   }
+   },
+   {"text": "Merhaba", "intent": "greeting"},
+  {"text": "Selam", "intent": "greeting"},
+  {"text": "Günaydın", "intent": "greeting"},
+  {"text": "İyi günler", "intent": "greeting"},
+  {"text": "Yıllık izin almak istiyorum", "intent": "leave_request_annual"},
+  {"text": "İzin talep etmek istiyorum", "intent": "leave_request_annual"},
+  {"text": "Tatil için izin almam gerekiyor", "intent": "leave_request_annual"},
+  {"text": "Hastalık izni almak istiyorum", "intent": "leave_request_sick"},
+  {"text": "Hasta oldum, izin almam gerekiyor", "intent": "leave_request_sick"},
+  {"text": "Doktora gitmem lazım, izin alabilir miyim?", "intent": "leave_request_sick"},
+  {"text": "5 Ekim'den 10 Ekim'e kadar izin istiyorum", "intent": "confirm_annual_leave"},
+  {"text": "Gelecek hafta Pazartesi ve Salı izinli olabilir miyim?", "intent": "confirm_annual_leave"},
+  {"text": "Bu ayın son haftası izin kullanmak istiyorum", "intent": "confirm_annual_leave"},
+  {"text": "Yarın ve öbür gün hasta iznine ihtiyacım var", "intent": "confirm_excuse_leave"},
+  {"text": "Önümüzdeki Çarşamba hastalık izni alabilir miyim?", "intent": "confirm_excuse_leave"},
+  {"text": "Satın alma talebi oluşturmak istiyorum", "intent": "purchase_request"},
+  {"text": "Yeni bir bilgisayar sipariş etmem gerekiyor", "intent": "purchase_request"},
+  {"text": "Ofis malzemeleri siparişi vermek istiyorum", "intent": "purchase_request"},
+   {"text": "Bu ayın son haftası izin istiyorum", "intent": "confirm_annual_leave"},
+   {"text": "Gelecek ay başı izne çıkmak istiyorum", "intent": "confirm_annual_leave"},
+   {"text": "15 Ekim'den 20 Ekim'e kadar izinliyim", "intent": "confirm_annual_leave"},
+   {"text": "10/11/2024 ile 15/11/2024 arası izin alabilir miyim", "intent": "confirm_annual_leave"},
+   {"text": "Önümüzdeki Pazartesi ve Salı izin kullanacağım", "intent": "confirm_annual_leave"},
+   {"text": "23.12.2024 - 27.12.2024 tarihleri arasında yıllık izin", "intent": "confirm_annual_leave"}
  ]

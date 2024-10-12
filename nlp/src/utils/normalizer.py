@@ -3,20 +3,16 @@ from datetime import datetime
 
 
 def normalize_date(date_string):
-    """
-    Farklı formatlardaki tarih girişlerini standart bir formata dönüştürür.
-    Örnek: '15.07.2024', '15/07/2024', '2024-07-15' -> '2024-07-15'
-    """
     if isinstance(date_string, list):
         date_string = date_string[0] if date_string else ""
 
-    date_formats = ['%d.%m.%Y', '%d/%m/%Y', '%Y-%m-%d']
-    for date_format in date_formats:
+    date_formats = ['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%d.%m.%Y']
+    for fmt in date_formats:
         try:
-            return datetime.strptime(date_string, date_format).strftime('%Y-%m-%d')
+            return datetime.strptime(date_string, fmt).strftime('%d/%m/%Y')
         except ValueError:
             continue
-    return date_string  # Eğer hiçbir format uymuyorsa, orijinal string'i döndür
+    return date_string
 
 
 def normalize_time(time_string):

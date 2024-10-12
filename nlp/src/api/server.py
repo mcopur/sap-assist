@@ -8,7 +8,6 @@ import sys
 import logging
 from flask_talisman import Talisman
 
-# Projenin kök dizinini Python yoluna ekle
 project_root = os.path.abspath(os.path.join(
     os.path.dirname(__file__), '..', '..', '..'))
 sys.path.insert(0, project_root)
@@ -22,7 +21,7 @@ limiter = Limiter(
     get_remote_address,
     app=app,
     default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://",  # In-memory storage kullanıyoruz
+    storage_uri="memory://",
     headers_enabled=True
 )
 
@@ -51,7 +50,7 @@ chatbot = initialize_chatbot()
 
 @app.route('/classify', methods=['POST'])
 @limiter.limit("30 per minute")
-def classify():
+async def classify():
     if chatbot is None:
         return jsonify({"error": "Chatbot initialization failed"}), 500
 
@@ -62,14 +61,15 @@ def classify():
         return jsonify({"error": "Invalid request payload"}), 400
 
     user_input = data['text']
+    context = data.get('context', {})
+
     try:
-        result = chatbot.process_message(user_input)
+        result = await chatbot.process_message(user_input, context)
         logger.info(f"Sending response: {result}")
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error processing message: {str(e)}")
+        logger.error(f"Error processing message: {str(e)}", exc_info=True)
         return jsonify({"error": "Error processing message"}), 500
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

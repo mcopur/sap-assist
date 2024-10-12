@@ -20,6 +20,8 @@ type Service struct {
 	NLPService *NLPService
 	httpClient *http.Client
 	sapConfig  *SAPConfig
+	csrfToken  string
+	cookie     string
 }
 
 type SAPConfig struct {
@@ -120,6 +122,9 @@ func (s *Service) Login(personnelNumber, password string) (string, error) {
 
 	csrfToken := resp.Header.Get("X-CSRF-Token")
 	cookie := resp.Header.Get("Set-Cookie")
+
+	s.csrfToken = csrfToken
+	s.cookie = cookie
 
 	token := fmt.Sprintf("%s:%s:%s:%s", personnelNumber, csrfToken, auth, cookie)
 	encodedToken := base64.StdEncoding.EncodeToString([]byte(token))
@@ -285,5 +290,38 @@ func (s *Service) ExtractTokenInfo(token string) (string, string, string, string
 }
 
 func (s *Service) ProcessMessage(input models.UserInput) (*models.IntentResponse, error) {
-	return s.NLPService.ProcessMessage(input)
+	intentResponse, err := s.NLPService.ProcessMessage(input)
+	if err != nil {
+		return nil, err
+	}
+
+	// Intent'e göre işlem yap
+	switch intentResponse.Intent {
+	case "leave_request_annual":
+		// Kullanıcıdan tarih bilgisi iste
+		intentResponse.Response = "Yıllık izin talebiniz için hangi tarihler arasında izin almak istiyorsunuz?"
+	case "confirm_annual_leave":
+		// Tarih bilgisini al ve izin talebini gönder
+		startDate, endDate := extractDatesFromEntities(intentResponse.Entities)
+		if startDate != "" && endDate != "" {
+			_, err := s.SendLeaveRequest(input.PersonnelNumber, startDate, endDate)
+			if err != nil {
+				intentResponse.Response = "Üzgünüm, izin talebiniz işlenirken bir hata oluştu: " + err.Error()
+			} else {
+				intentResponse.Response = "Yıllık izin talebiniz başarıyla alındı ve iletildi. " + startDate + " ile " + endDate + " tarihleri arasında izin talebiniz sisteme kaydedildi. Onay durumu hakkında en kısa sürede bilgilendirileceksiniz."
+			}
+		} else {
+			intentResponse.Response = "Üzgünüm, tarih bilgisini anlayamadım. Lütfen tarihleri gün/ay/yıl formatında belirtir misiniz?"
+		}
+	}
+
+	return intentResponse, nil
+}
+
+func extractDatesFromEntities(entities map[string][]string) (string, string) {
+	dates := entities["DATE"]
+	if len(dates) >= 2 {
+		return dates[0], dates[1]
+	}
+	return "", ""
 }
